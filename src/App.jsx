@@ -1,5 +1,5 @@
-import MultiplicationGame from "./MultiplicationGame";
+import CosmicMultiplicationQuest from "./CosmicMultiplicationQuest";
 
 export default function App() {
-  return <MultiplicationGame />;
+  return <CosmicMultiplicationQuest />;
 }
