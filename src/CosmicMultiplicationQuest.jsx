@@ -440,14 +440,17 @@ const CosmicMultiplicationQuest = () => {
       let speedMultiplier = 1;
       let speedBonusText = "";
       
-      if (timeRemaining >= getDifficultyTimeLimit(planet.difficulty) * 0.8) {
+      const fullTimeLimit = getDifficultyTimeLimit(planet.difficulty);
+      const secondsUsed = fullTimeLimit - timeRemaining;
+      
+      if (timeRemaining >= fullTimeLimit * 0.8) {
         // Super fast answer (80%+ of time remaining)
         speedMultiplier = 2.0;
-        speedBonusText = "SUPER FAST! ⚡⚡ (2x points)";
-      } else if (timeRemaining >= getDifficultyTimeLimit(planet.difficulty) * 0.6) {
+        speedBonusText = `SUPER FAST! ⚡⚡ (${secondsUsed.toFixed(1)}s - 2× points)`;
+      } else if (timeRemaining >= fullTimeLimit * 0.6) {
         // Fast answer (60%+ of time remaining)
         speedMultiplier = 1.5;
-        speedBonusText = "FAST! ⚡ (1.5x points)";
+        speedBonusText = `FAST! ⚡ (${secondsUsed.toFixed(1)}s - 1.5× points)`;
       }
       
       // Calculate final points and round to integer
@@ -658,21 +661,33 @@ const CosmicMultiplicationQuest = () => {
       // Use rounded integer points
       const bonusPoints = 50;
       setScore((prev) => prev + bonusPoints);
-      setFeedback(`Mini-game success! +${bonusPoints} points`);
+      
+      // Create a more exciting success message
+      let successMessage;
+      
+      if (miniGameType === "asteroid") {
+        successMessage = `MISSION SUCCESS! +${bonusPoints} points\nYou've successfully navigated through the asteroid field!`;
+      } else {
+        successMessage = `MISSION SUCCESS! +${bonusPoints} points\nPerfect landing achieved on the planetary surface!`;
+      }
+      
+      setFeedback(successMessage);
+      
+      // Add badge
       setBadges((prev) => [
         ...prev,
         `${miniGameType === "asteroid" ? "Asteroid Dodger" : "Safe Lander"}`,
       ]);
     } else {
       setFeedback(
-        `Mini-game failed. The answer was ${currentQuestion.answer}.`
+        `Mission failed. The answer was ${currentQuestion.answer}.`
       );
     }
 
-    // Continue with next question
+    // Show feedback for a bit longer on mini-games to make it more noticeable
     setTimeout(() => {
       generateQuestion();
-    }, 1500);
+    }, 2000);
   };
 
   // Handle planet selection
@@ -1011,7 +1026,7 @@ const CosmicMultiplicationQuest = () => {
           {feedback && (
             <div
               className={`mt-4 p-3 rounded-lg text-center text-lg font-semibold ${
-                feedback.includes("Correct")
+                feedback.includes("Correct") || feedback.includes("success")
                   ? "bg-green-700 text-white"
                   : "bg-red-700 text-white"
               }`}
@@ -1021,6 +1036,8 @@ const CosmicMultiplicationQuest = () => {
                   ? "0 0 20px rgba(16, 185, 129, 0.7)" 
                   : feedback.includes("FAST") 
                   ? "0 0 15px rgba(16, 185, 129, 0.5)"
+                  : feedback.includes("success")
+                  ? "0 0 15px rgba(16, 185, 129, 0.6)"
                   : ""
               }}
             >
