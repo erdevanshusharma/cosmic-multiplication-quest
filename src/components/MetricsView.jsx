@@ -12,9 +12,14 @@ const MetricsView = ({
   selectPlanet,
   showPerformanceView,
   setShowPerformanceView,
-  attemptCounts
+  attemptCounts,
 }) => {
-  const masteryData = getMasteryData(planets, correctAnswers, wrongAnswers, responseTimes);
+  const masteryData = getMasteryData(
+    planets,
+    correctAnswers,
+    wrongAnswers,
+    responseTimes
+  );
 
   return (
     <div className="max-w-4xl mx-auto text-white">
@@ -42,7 +47,7 @@ const MetricsView = ({
             const planetData = masteryData.find((p) => p.id === planet.id);
             const isUnlocked = unlockedPlanets.includes(planet.id);
             const mastery = planetData ? planetData.mastery : 0;
-            
+
             return (
               <div
                 key={planet.id}
@@ -114,26 +119,30 @@ const MetricsView = ({
                         {planetData.avgResponseTime && (
                           <div className="flex justify-between">
                             <span>Avg Time:</span>
-                            <span>{planetData.avgResponseTime.toFixed(1)}s</span>
+                            <span>
+                              {planetData.avgResponseTime.toFixed(2)}s
+                            </span>
                           </div>
                         )}
                       </div>
                     )}
-                    
+
                     {/* Show HeatMap for unlocked planets */}
-                    {isUnlocked && planetData && planetData.totalQuestions > 0 && (
-                      <div className="mt-3 bg-black bg-opacity-40 p-2 rounded-lg">
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowPerformanceView(true);
-                          }}
-                          className="text-xs text-blue-300 hover:text-blue-200 underline block w-full text-center"
-                        >
-                          View Detailed Performance
-                        </button>
-                      </div>
-                    )}
+                    {isUnlocked &&
+                      planetData &&
+                      planetData.totalQuestions > 0 && (
+                        <div className="mt-3 bg-black bg-opacity-40 p-2 rounded-lg">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowPerformanceView(true);
+                            }}
+                            className="text-xs text-blue-300 hover:text-blue-200 underline block w-full text-center"
+                          >
+                            View Detailed Performance
+                          </button>
+                        </div>
+                      )}
                   </div>
                 )}
 
@@ -155,7 +164,7 @@ const MetricsView = ({
       ) : (
         <div className="bg-gray-800 bg-opacity-60 rounded-lg p-4 mb-8">
           <h3 className="text-2xl font-bold mb-4">Performance Stats</h3>
-          
+
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
@@ -197,7 +206,7 @@ const MetricsView = ({
                       </td>
                       <td className="px-4 py-3 text-center">
                         {planet.avgResponseTime
-                          ? `${planet.avgResponseTime.toFixed(1)}s`
+                          ? `${planet.avgResponseTime.toFixed(2)}s`
                           : "N/A"}
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -214,30 +223,32 @@ const MetricsView = ({
               </tbody>
             </table>
           </div>
-          
+
           {/* Planet-specific HeatMaps */}
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             {masteryData
               .filter((planet) => unlockedPlanets.includes(planet.id))
               .map((planet) => (
-                <div 
-                  key={`heatmap-${planet.id}`} 
+                <div
+                  key={`heatmap-${planet.id}`}
                   className="p-3 bg-gray-700 bg-opacity-30 rounded-lg"
                 >
                   <div className="flex items-center mb-2">
                     <div
                       className={`w-4 h-4 ${planet.color} rounded-full mr-2`}
                     ></div>
-                    <h4 className="text-lg font-bold">{planet.name} ({planet.table}'s Table)</h4>
+                    <h4 className="text-lg font-bold">
+                      {planet.name} ({planet.table}'s Table)
+                    </h4>
                   </div>
-                  <HeatMap 
+                  <HeatMap
                     tableNumber={planet.table}
                     responseTimes={responseTimes}
                     attemptCounts={attemptCounts}
                     correctAnswers={correctAnswers}
                     wrongAnswers={wrongAnswers}
                   />
-                  
+
                   <button
                     onClick={() => {
                       selectPlanet(planet.id);

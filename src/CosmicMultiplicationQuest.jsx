@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
 import { planets } from "./Constants";
-import { saveToLocalStorage, loadFromLocalStorage } from "./utils/LocalStorageUtils";
+import {
+  saveToLocalStorage,
+  loadFromLocalStorage,
+} from "./utils/LocalStorageUtils";
 import StarsBackground from "./components/StarsBackground";
 import MainMenu from "./components/MainMenu";
 import GameScreen from "./components/GameScreen";
 import MetricsView from "./components/MetricsView";
-import { generateQuestion, generateMiniGameQuestion, getDifficultyTimeLimit } from "./utils/QuestionGenerator";
+import {
+  generateQuestion,
+  generateMiniGameQuestion,
+  getDifficultyTimeLimit,
+} from "./utils/QuestionGenerator";
 import { getAverageResponseTime, getPlayerRank } from "./utils/MetricsUtils";
 
 const CosmicMultiplicationQuest = () => {
@@ -82,13 +89,13 @@ const CosmicMultiplicationQuest = () => {
   // Save states to localStorage when they change and update URL
   useEffect(() => {
     saveToLocalStorage("cosmicQuest_gameState", gameState);
-    
+
     // Always use the correct base URL for GitHub Pages
-    const baseUrl = '/cosmic-multiplication-quest/';
-    
+    const baseUrl = "/cosmic-multiplication-quest/";
+
     // Update URL based on game state
-    let newPath = '';
-    
+    let newPath = "";
+
     if (gameState === "menu") {
       newPath = baseUrl;
     } else if (gameState === "game") {
@@ -96,12 +103,12 @@ const CosmicMultiplicationQuest = () => {
     } else if (gameState === "metrics") {
       newPath = `${baseUrl}stats`;
     }
-    
+
     // Use the final path directly - no combination needed
     const newUrl = newPath;
-    
+
     // Update URL without full page reload
-    window.history.pushState({gameState, currentPlanet}, "", newUrl);
+    window.history.pushState({ gameState, currentPlanet }, "", newUrl);
   }, [gameState, currentPlanet]);
 
   useEffect(() => {
@@ -186,7 +193,7 @@ const CosmicMultiplicationQuest = () => {
       }
     }
   }, []);
-  
+
   // Handle browser back/forward button
   useEffect(() => {
     const handlePopState = (event) => {
@@ -201,20 +208,20 @@ const CosmicMultiplicationQuest = () => {
         setGameState("menu");
       }
     };
-    
+
     // Add event listener for popstate
     window.addEventListener("popstate", handlePopState);
-    
+
     // Initial URL processing
     const processInitialUrl = () => {
-      const baseUrl = '/cosmic-multiplication-quest/';
+      const baseUrl = "/cosmic-multiplication-quest/";
       const path = window.location.pathname;
-      
+
       // Handle paths directly
       if (path.includes(`${baseUrl}play/`)) {
         const planetIdMatch = path.match(/\/play\/(\d+)/);
         const planetId = planetIdMatch ? parseInt(planetIdMatch[1]) : 1;
-        
+
         if (unlockedPlanets.includes(planetId)) {
           setCurrentPlanet(planetId);
           setGameState("game");
@@ -225,10 +232,10 @@ const CosmicMultiplicationQuest = () => {
         setGameState("menu");
       }
     };
-    
+
     // Process the initial URL when the component mounts
     processInitialUrl();
-    
+
     // Clean up the event listener when component unmounts
     return () => {
       window.removeEventListener("popstate", handlePopState);
@@ -245,7 +252,7 @@ const CosmicMultiplicationQuest = () => {
     setMiniGameFeedback("");
 
     const planet = planets.find((p) => p.id === currentPlanet);
-    
+
     const result = generateQuestion(
       planet,
       previousMultiplier,
@@ -312,7 +319,10 @@ const CosmicMultiplicationQuest = () => {
 
     if (isCorrect) {
       // Calculate points based on table number
-      const difficultyMultiplier = Math.min(Math.max(Math.floor(planet.table / 4), 1), 5);
+      const difficultyMultiplier = Math.min(
+        Math.max(Math.floor(planet.table / 4), 1),
+        5
+      );
 
       // Calculate base points
       const timeBonus = Math.max(1, Math.ceil(timeRemaining / 2));
@@ -328,12 +338,12 @@ const CosmicMultiplicationQuest = () => {
         // Super fast answer (80%+ of time remaining)
         speedMultiplier = 2.0;
         speedBonusText = `SUPER FAST! ⚡⚡ (${secondsUsed.toFixed(
-          1
+          2
         )}s - 2× points)`;
       } else if (timeRemaining >= fullTimeLimit * 0.6) {
         // Fast answer (60%+ of time remaining)
         speedMultiplier = 1.5;
-        speedBonusText = `FAST! ⚡ (${secondsUsed.toFixed(1)}s - 1.5× points)`;
+        speedBonusText = `FAST! ⚡ (${secondsUsed.toFixed(2)}s - 1.5× points)`;
       }
 
       // Calculate final points and round to integer
@@ -390,26 +400,29 @@ const CosmicMultiplicationQuest = () => {
 
       // Get average response time and player rank for this table
       const currentTable = planets.find((p) => p.id === currentPlanet).table;
-      const avgResponseTime = getAverageResponseTime(currentTable, responseTimes);
+      const avgResponseTime = getAverageResponseTime(
+        currentTable,
+        responseTimes
+      );
       const playerRank = avgResponseTime
         ? getPlayerRank(avgResponseTime)
         : null;
 
       // Get the minimum rank required to unlock the next planet (Pro or better)
       const hasRequiredRank =
-        playerRank &&
-        ["Pro", "Hacker", "God"].includes(playerRank.rank);
+        playerRank && ["Pro", "Hacker", "God"].includes(playerRank.rank);
 
       // Check for planet unlock conditions
-      if (
-        currentMastery >= 85 &&
-        fastAnswersCount >= 10 &&
-        hasRequiredRank 
-      ) {
+      if (currentMastery >= 85 && fastAnswersCount >= 10 && hasRequiredRank) {
         // Find the next planet ID
-        const currentPlanetIndex = planets.findIndex(p => p.id === currentPlanet);
-        const nextPlanetId = currentPlanetIndex < planets.length - 1 ? planets[currentPlanetIndex + 1].id : null;
-        
+        const currentPlanetIndex = planets.findIndex(
+          (p) => p.id === currentPlanet
+        );
+        const nextPlanetId =
+          currentPlanetIndex < planets.length - 1
+            ? planets[currentPlanetIndex + 1].id
+            : null;
+
         // Unlock the next planet if there is one and it's not already unlocked
         if (nextPlanetId && !unlockedPlanets.includes(nextPlanetId)) {
           setUnlockedPlanets((prev) => [...prev, nextPlanetId]);
@@ -752,9 +765,9 @@ const CosmicMultiplicationQuest = () => {
 
       <div className="container mx-auto relative z-10">
         {gameState === "menu" && (
-          <MainMenu 
-            startGame={startGame} 
-            setGameState={setGameState} 
+          <MainMenu
+            startGame={startGame}
+            setGameState={setGameState}
             score={score}
             unlockedPlanets={unlockedPlanets}
             correctAnswers={correctAnswers}
@@ -762,9 +775,9 @@ const CosmicMultiplicationQuest = () => {
             createNewProfile={createNewProfile}
           />
         )}
-        
+
         {gameState === "game" && (
-          <GameScreen 
+          <GameScreen
             planets={planets}
             currentPlanet={currentPlanet}
             score={score}
@@ -786,9 +799,9 @@ const CosmicMultiplicationQuest = () => {
             wrongAnswers={wrongAnswers}
           />
         )}
-        
+
         {gameState === "metrics" && (
-          <MetricsView 
+          <MetricsView
             planets={planets}
             unlockedPlanets={unlockedPlanets}
             correctAnswers={correctAnswers}
