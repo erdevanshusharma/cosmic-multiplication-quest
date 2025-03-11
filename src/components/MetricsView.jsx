@@ -241,7 +241,7 @@ const MetricsView = ({
                   <button
                     onClick={() => {
                       selectPlanet(planet.id);
-                      setGameState("play");
+                      setGameState("game");
                     }}
                     className={`mt-3 px-4 py-2 w-full ${planet.color} hover:opacity-80 text-white font-bold rounded-lg shadow-lg transition-all transform hover:scale-105`}
                   >

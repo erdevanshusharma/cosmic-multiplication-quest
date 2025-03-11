@@ -79,10 +79,24 @@ const CosmicMultiplicationQuest = () => {
   ); // Track number of attempts for each question
   const [showPerformanceView, setShowPerformanceView] = useState(false); // Toggle for performance view
 
-  // Save states to localStorage when they change
+  // Save states to localStorage when they change and update URL
   useEffect(() => {
     saveToLocalStorage("cosmicQuest_gameState", gameState);
-  }, [gameState]);
+    
+    // Update URL based on game state
+    let newUrl = window.location.pathname;
+    
+    if (gameState === "menu") {
+      newUrl = "/";
+    } else if (gameState === "game") {
+      newUrl = `/play/${currentPlanet}`;
+    } else if (gameState === "metrics") {
+      newUrl = "/stats";
+    }
+    
+    // Update URL without full page reload
+    window.history.pushState({gameState, currentPlanet}, "", newUrl);
+  }, [gameState, currentPlanet]);
 
   useEffect(() => {
     saveToLocalStorage("cosmicQuest_currentPlanet", currentPlanet);
@@ -166,6 +180,49 @@ const CosmicMultiplicationQuest = () => {
       }
     }
   }, []);
+  
+  // Handle browser back/forward button
+  useEffect(() => {
+    const handlePopState = (event) => {
+      if (event.state) {
+        // Restore the state from the popstate event
+        setGameState(event.state.gameState || "menu");
+        if (event.state.currentPlanet) {
+          setCurrentPlanet(event.state.currentPlanet);
+        }
+      } else {
+        // Default to menu if no state is available
+        setGameState("menu");
+      }
+    };
+    
+    // Add event listener for popstate
+    window.addEventListener("popstate", handlePopState);
+    
+    // Initial URL processing
+    const processInitialUrl = () => {
+      const path = window.location.pathname;
+      if (path.includes("/play/")) {
+        const planetId = parseInt(path.split("/play/")[1]) || 1;
+        if (unlockedPlanets.includes(planetId)) {
+          setCurrentPlanet(planetId);
+          setGameState("game");
+        }
+      } else if (path.includes("/stats")) {
+        setGameState("metrics");
+      } else {
+        setGameState("menu");
+      }
+    };
+    
+    // Process the initial URL when the component mounts
+    processInitialUrl();
+    
+    // Clean up the event listener when component unmounts
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [unlockedPlanets]);
 
   // Track previous multiplier to avoid consecutive repeats
   const [previousMultiplier, setPreviousMultiplier] = useState(null);
@@ -217,7 +274,7 @@ const CosmicMultiplicationQuest = () => {
     const planet = planets.find((p) => p.id === currentPlanet);
 
     // Calculate response time in seconds
-    const fullTimeLimit = getDifficultyTimeLimit(planet.difficulty);
+    const fullTimeLimit = getDifficultyTimeLimit(planet.table);
     const secondsUsed = fullTimeLimit - timeRemaining;
 
     // Update attempt counts for this question
