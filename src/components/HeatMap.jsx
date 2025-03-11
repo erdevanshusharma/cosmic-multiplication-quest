@@ -30,16 +30,14 @@ const HeatMap = ({ tableNumber, responseTimes, attemptCounts, correctAnswers, wr
     let cellColor;
     if (avgTime === null) {
       cellColor = "bg-gray-700"; // Not attempted
+    } else if (avgTime <= 1) {
+      cellColor = "bg-rose-700"; // God (rose)
     } else if (avgTime <= 3) {
       cellColor = "bg-purple-700"; // Grandmaster (purple)
     } else if (avgTime <= 6) {
       cellColor = "bg-orange-700"; // Master (orange) 
     } else if (avgTime <= 9) {
       cellColor = "bg-yellow-700"; // Expert (yellow)
-    } else if (avgTime <= 12) {
-      cellColor = "bg-blue-700"; // Journeyman (blue)
-    } else if (avgTime <= 15) {
-      cellColor = "bg-green-700"; // Apprentice (green)
     } else {
       cellColor = "bg-gray-600"; // Noob (gray)
     }
@@ -91,6 +89,10 @@ const HeatMap = ({ tableNumber, responseTimes, attemptCounts, correctAnswers, wr
       {/* Color legend matching rank system */}
       <div className="mt-2 flex flex-wrap gap-2 justify-center">
         <div className="flex items-center">
+          <div className="w-3 h-3 bg-rose-700 rounded-sm mr-1"></div>
+          <span className="text-rose-500 text-xs">God ≤1s</span>
+        </div>
+        <div className="flex items-center">
           <div className="w-3 h-3 bg-purple-700 rounded-sm mr-1"></div>
           <span className="text-purple-400 text-xs">Grandmaster ≤3s</span>
         </div>
@@ -103,16 +105,8 @@ const HeatMap = ({ tableNumber, responseTimes, attemptCounts, correctAnswers, wr
           <span className="text-yellow-400 text-xs">Expert ≤9s</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-blue-700 rounded-sm mr-1"></div>
-          <span className="text-blue-400 text-xs">Journeyman ≤12s</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-3 h-3 bg-green-700 rounded-sm mr-1"></div>
-          <span className="text-green-400 text-xs">Apprentice ≤15s</span>
-        </div>
-        <div className="flex items-center">
           <div className="w-3 h-3 bg-gray-600 rounded-sm mr-1"></div>
-          <span className="text-gray-400 text-xs">Noob &gt;15s</span>
+          <span className="text-gray-400 text-xs">Noob &gt;9s</span>
         </div>
         <div className="flex items-center">
           <div className="w-3 h-3 bg-gray-700 rounded-sm mr-1"></div>
