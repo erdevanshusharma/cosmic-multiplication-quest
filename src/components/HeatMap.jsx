@@ -106,7 +106,7 @@ const HeatMap = ({ tableNumber, responseTimes, attemptCounts, correctAnswers, wr
         </div>
         <div className="flex items-center">
           <div className="w-3 h-3 bg-blue-900 rounded-sm mr-1"></div>
-          <span className="text-white text-xs font-bold">Noob >10s</span>
+          <span className="text-white text-xs font-bold">Noob &gt;10s</span>
         </div>
         <div className="flex items-center">
           <div className="w-3 h-3 bg-gray-700 rounded-sm mr-1"></div>

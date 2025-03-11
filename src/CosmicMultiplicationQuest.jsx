@@ -404,12 +404,16 @@ const CosmicMultiplicationQuest = () => {
       if (
         currentMastery >= 85 &&
         fastAnswersCount >= 10 &&
-        hasRequiredRank &&
-        !unlockedPlanets.includes(currentPlanet + 1) &&
-        currentPlanet < planets.length
+        hasRequiredRank 
       ) {
-        // Unlock the next planet
-        setUnlockedPlanets((prev) => [...prev, currentPlanet + 1]);
+        // Find the next planet ID
+        const currentPlanetIndex = planets.findIndex(p => p.id === currentPlanet);
+        const nextPlanetId = currentPlanetIndex < planets.length - 1 ? planets[currentPlanetIndex + 1].id : null;
+        
+        // Unlock the next planet if there is one and it's not already unlocked
+        if (nextPlanetId && !unlockedPlanets.includes(nextPlanetId)) {
+          setUnlockedPlanets((prev) => [...prev, nextPlanetId]);
+        }
         setBadges((prev) => [
           ...prev,
           `Unlocked ${planets[currentPlanet].name}`,
