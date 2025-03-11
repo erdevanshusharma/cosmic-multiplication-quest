@@ -57,6 +57,10 @@ const GameQuestion = ({
           <button
             key={index}
             onClick={() => submitAnswer(option)}
+            onTouchStart={(e) => {
+              e.preventDefault(); // Prevent double activation
+              submitAnswer(option);
+            }}
             disabled={feedback !== ""} // Disable buttons when showing feedback
             className={`p-4 text-2xl text-center ${
               feedback !== ""

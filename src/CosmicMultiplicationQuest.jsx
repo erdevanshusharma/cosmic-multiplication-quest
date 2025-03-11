@@ -243,17 +243,8 @@ const CosmicMultiplicationQuest = () => {
     }
 
     if (isCorrect) {
-      // Calculate points based on time remaining and difficulty
-      const difficultyMultiplier =
-        planet.difficulty === "easy"
-          ? 1
-          : planet.difficulty === "medium"
-          ? 2
-          : planet.difficulty === "hard"
-          ? 3
-          : planet.difficulty === "expert"
-          ? 4
-          : 5; // 5x for master level
+      // Calculate points based on table number
+      const difficultyMultiplier = Math.min(Math.max(Math.floor(planet.table / 4), 1), 5);
 
       // Calculate base points
       const timeBonus = Math.max(1, Math.ceil(timeRemaining / 2));
@@ -262,7 +253,7 @@ const CosmicMultiplicationQuest = () => {
       let speedMultiplier = 1;
       let speedBonusText = "";
 
-      const fullTimeLimit = getDifficultyTimeLimit(planet.difficulty);
+      const fullTimeLimit = getDifficultyTimeLimit(planet.table);
       const secondsUsed = fullTimeLimit - timeRemaining;
 
       if (timeRemaining >= fullTimeLimit * 0.8) {
@@ -299,12 +290,12 @@ const CosmicMultiplicationQuest = () => {
       }));
 
       // Track fast answers for the current planet (answers where time remaining is high)
-      const isFastAnswer =
-        (planet.difficulty === "easy" && timeRemaining >= 10) ||
-        (planet.difficulty === "medium" && timeRemaining >= 8) ||
-        (planet.difficulty === "hard" && timeRemaining >= 6) ||
-        (planet.difficulty === "expert" && timeRemaining >= 5) ||
-        (planet.difficulty === "master" && timeRemaining >= 4);
+      const isFastAnswer = 
+        (planet.table <= 5 && timeRemaining >= 10) ||
+        (planet.table <= 9 && timeRemaining >= 8) ||
+        (planet.table <= 12 && timeRemaining >= 6) ||
+        (planet.table <= 16 && timeRemaining >= 5) ||
+        (planet.table >= 17 && timeRemaining >= 4);
 
       if (isFastAnswer) {
         setFastAnswers((prev) => ({
@@ -737,8 +728,6 @@ const CosmicMultiplicationQuest = () => {
             responseTimes={responseTimes}
             setGameState={setGameState}
             selectPlanet={selectPlanet}
-            spaceshipParts={spaceshipParts}
-            badges={badges}
             showPerformanceView={showPerformanceView}
             setShowPerformanceView={setShowPerformanceView}
             attemptCounts={attemptCounts}

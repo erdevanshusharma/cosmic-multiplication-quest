@@ -10,8 +10,6 @@ const MetricsView = ({
   responseTimes,
   setGameState,
   selectPlanet,
-  spaceshipParts,
-  badges,
   showPerformanceView,
   setShowPerformanceView,
   attemptCounts
@@ -68,7 +66,7 @@ const MetricsView = ({
                         isUnlocked ? "text-white" : "text-gray-400"
                       }`}
                     >
-                      {planet.table}'s Table ({planet.difficulty})
+                      {planet.table}'s Table
                     </p>
                   </div>
                   <div
@@ -239,62 +237,23 @@ const MetricsView = ({
                     correctAnswers={correctAnswers}
                     wrongAnswers={wrongAnswers}
                   />
+                  
+                  <button
+                    onClick={() => {
+                      selectPlanet(planet.id);
+                      setGameState("play");
+                    }}
+                    className={`mt-3 px-4 py-2 w-full ${planet.color} hover:opacity-80 text-white font-bold rounded-lg shadow-lg transition-all transform hover:scale-105`}
+                  >
+                    Play {planet.name} Problems
+                  </button>
                 </div>
               ))}
           </div>
         </div>
       )}
 
-      {/* Achievements section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gray-800 bg-opacity-60 rounded-lg p-4">
-          <h3 className="text-xl font-bold mb-3 flex items-center">
-            <span className="text-2xl mr-2">🏆</span> Achievements
-          </h3>
-          {badges.length > 0 ? (
-            <ul className="space-y-2">
-              {badges.map((badge, index) => (
-                <li
-                  key={index}
-                  className="flex items-center bg-gray-700 bg-opacity-40 rounded-lg p-2"
-                >
-                  <span className="text-yellow-300 mr-2">⭐</span>
-                  {badge}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-400 italic">
-              Complete challenges to earn achievements!
-            </p>
-          )}
-        </div>
-
-        <div className="bg-gray-800 bg-opacity-60 rounded-lg p-4">
-          <h3 className="text-xl font-bold mb-3 flex items-center">
-            <span className="text-2xl mr-2">🚀</span> Spaceship Parts
-          </h3>
-          <div className="flex items-center">
-            <div className="w-full bg-gray-700 rounded-full h-4 mr-3">
-              <div
-                className="bg-blue-500 h-4 rounded-full"
-                style={{
-                  width: `${Math.min((spaceshipParts / 20) * 100, 100)}%`,
-                  boxShadow: "0 0 10px rgba(59, 130, 246, 0.5)",
-                }}
-              ></div>
-            </div>
-            <div className="whitespace-nowrap font-bold text-blue-300">
-              {spaceshipParts}/20
-            </div>
-          </div>
-          <p className="mt-2 text-sm text-gray-300">
-            {spaceshipParts >= 20
-              ? "Spaceship complete! You're a true space mathematician!"
-              : "Collect more spaceship parts by answering questions correctly"}
-          </p>
-        </div>
-      </div>
+      {/* Removed achievements and spaceship parts sections */}
     </div>
   );
 };

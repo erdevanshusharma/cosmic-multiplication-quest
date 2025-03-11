@@ -1,19 +1,16 @@
-// Get time limit based on difficulty
-export const getDifficultyTimeLimit = (difficulty) => {
-  switch (difficulty) {
-    case "easy":
-      return 15;
-    case "medium":
-      return 12;
-    case "hard":
-      return 10;
-    case "expert":
-      return 8;
-    case "master":
-      return 6;
-    default:
-      return 10;
-  }
+// Get time limit based on table number
+export const getDifficultyTimeLimit = (tableNumber) => {
+  // Tables 3-5: 15 seconds
+  // Tables 6-9: 12 seconds
+  // Tables 10-12: 10 seconds
+  // Tables 13-16: 8 seconds
+  // Tables 17-20: 6 seconds
+  
+  if (tableNumber <= 5) return 15;
+  if (tableNumber <= 9) return 12;
+  if (tableNumber <= 12) return 10;
+  if (tableNumber <= 16) return 8;
+  return 6; // Tables 17-20
 };
 
 // Generate a new multiplication question
@@ -168,7 +165,7 @@ export const generateQuestion = (
     multiplicand,
     multiplier,
     answer: correctAnswer,
-    timeLimit: getDifficultyTimeLimit(planet.difficulty),
+    timeLimit: getDifficultyTimeLimit(planet.table),
   };
 
   return {
