@@ -107,6 +107,7 @@ const CosmicMultiplicationQuest = () => {
   );
   const [miniGameActive, setMiniGameActive] = useState(false);
   const [miniGameType, setMiniGameType] = useState("");
+  const [miniGameFeedback, setMiniGameFeedback] = useState("");
   const [planetMastery, setPlanetMastery] = useState(
     loadFromLocalStorage("cosmicQuest_planetMastery", {})
   ); // Tracks mastery level for each planet
@@ -116,6 +117,15 @@ const CosmicMultiplicationQuest = () => {
   const [lastPlayed, setLastPlayed] = useState(
     loadFromLocalStorage("cosmicQuest_lastPlayed", null)
   ); // Last played timestamp
+  
+  // Performance metrics
+  const [responseTimes, setResponseTimes] = useState(
+    loadFromLocalStorage("cosmicQuest_responseTimes", {})
+  ); // Track response times for each question
+  const [attemptCounts, setAttemptCounts] = useState(
+    loadFromLocalStorage("cosmicQuest_attemptCounts", {})
+  ); // Track number of attempts for each question
+  const [showPerformanceView, setShowPerformanceView] = useState(false); // Toggle for performance view
 
   // Save states to localStorage when they change
   useEffect(() => {
@@ -165,6 +175,14 @@ const CosmicMultiplicationQuest = () => {
   useEffect(() => {
     saveToLocalStorage("cosmicQuest_lastPlayed", lastPlayed);
   }, [lastPlayed]);
+  
+  useEffect(() => {
+    saveToLocalStorage("cosmicQuest_responseTimes", responseTimes);
+  }, [responseTimes]);
+  
+  useEffect(() => {
+    saveToLocalStorage("cosmicQuest_attemptCounts", attemptCounts);
+  }, [attemptCounts]);
 
   // Update last played time whenever the game is started or resumed
   useEffect(() => {
@@ -321,11 +339,96 @@ const CosmicMultiplicationQuest = () => {
     },
   ];
 
+  // Track previous multiplier to avoid consecutive repeats
+  const [previousMultiplier, setPreviousMultiplier] = useState(null);
+
   // Generate a new multiplication question based on current planet
   const generateQuestion = () => {
+    // Clear any feedback and set game to active mode
+    setMiniGameActive(false);
+    setMiniGameFeedback("");
+    
     const planet = planets.find((p) => p.id === currentPlanet);
     const multiplicand = planet.table;
-    const multiplier = Math.floor(Math.random() * 12) + 1;
+    
+    // Get a multiplier that's different from the previous one
+    // and preferentially choose difficult multipliers based on metrics
+    let multiplier;
+    const tableKey = `table_${multiplicand}`;
+    const tableData = responseTimes[tableKey] || {};
+    
+    // Track which multipliers have been shown the least
+    // Use attemptCounts to determine how many times each multiplier has been shown
+    const multiplierCounts = {};
+    
+    // Count appearances of each multiplier for this table
+    for (let i = 1; i <= 12; i++) {
+      const questionKey = `${multiplicand}x${i}`;
+      multiplierCounts[i] = attemptCounts[questionKey] || 0;
+    }
+    
+    // Create an array of all multipliers except the previous one
+    const availableMultipliers = Array.from({ length: 12 }, (_, i) => i + 1)
+      .filter(mult => mult !== previousMultiplier);
+    
+    // Determine selection strategy
+    const random = Math.random();
+    
+    if (random < 0.4) {
+      // 40% chance: Prioritize least shown multipliers
+      // Sort by lowest appearance count
+      availableMultipliers.sort((a, b) => multiplierCounts[a] - multiplierCounts[b]);
+      
+      // Pick one of the least shown multipliers (with some randomness)
+      // Take the first 3 least shown or all if less than 3 are available
+      const leastShownCount = Math.min(3, availableMultipliers.length);
+      multiplier = availableMultipliers[Math.floor(Math.random() * leastShownCount)];
+    }
+    else if (random < 0.8 && Object.keys(tableData).length >= 6) {
+      // 40% chance: Use performance-based selection (when we have enough data)
+      // Create a list of all multipliers with their average response times
+      const multiplierPerformance = availableMultipliers.map(mult => {
+        const questionKey = `${multiplicand}x${mult}`;
+        const times = tableData[questionKey] || [];
+        // Default to 0 if no data (will be least prioritized)
+        const avgTime = times.length > 0 
+          ? times.reduce((sum, t) => sum + t, 0) / times.length 
+          : 0;
+        return { multiplier: mult, avgTime };
+      });
+      
+      if (multiplierPerformance.length > 0) {
+        // Weight by avg time - slower times get higher probability
+        const totalWeight = multiplierPerformance.reduce((sum, item) => sum + Math.max(1, item.avgTime), 0);
+        let randomValue = Math.random() * totalWeight;
+        
+        for (const item of multiplierPerformance) {
+          const weight = Math.max(1, item.avgTime); // Ensure even unseen items have a chance
+          if (randomValue <= weight) {
+            multiplier = item.multiplier;
+            break;
+          }
+          randomValue -= weight;
+        }
+        
+        // Fallback if something goes wrong with weighted selection
+        if (!multiplier) {
+          multiplier = multiplierPerformance[
+            Math.floor(Math.random() * multiplierPerformance.length)
+          ].multiplier;
+        }
+      } else {
+        // Should never reach here since we've filtered previousMultiplier
+        multiplier = availableMultipliers[Math.floor(Math.random() * availableMultipliers.length)];
+      }
+    } else {
+      // 20% chance: Pure random selection from available multipliers
+      multiplier = availableMultipliers[Math.floor(Math.random() * availableMultipliers.length)];
+    }
+    
+    // Save this multiplier as the previous one for next time
+    setPreviousMultiplier(multiplier);
+    
     const correctAnswer = multiplicand * multiplier;
 
     // Generate 3 wrong answers that are close to the correct answer
@@ -382,7 +485,7 @@ const CosmicMultiplicationQuest = () => {
     setCurrentQuestion(newQuestion);
     setAnswerOptions(options);
     setTimeRemaining(newQuestion.timeLimit);
-    setFeedback("");
+    setFeedback(""); // Clear any existing feedback
     setTimerRunning(true);
   };
 
@@ -406,10 +509,17 @@ const CosmicMultiplicationQuest = () => {
 
   // Start the game
   const startGame = () => {
-    setGameState("game");
-    setScore(0);
-    setLives(3);
-    generateQuestion();
+    // Get the current planet
+    const planet = planets.find((p) => p.id === currentPlanet);
+    
+    // Reset states
+    setMiniGameActive(false);
+    setMiniGameFeedback("");
+    setFeedback("");
+    setPreviousMultiplier(null);
+    
+    // Start with a fresh game using the current planet
+    startGameWithPlanet(planet);
   };
 
   // Submit answer
@@ -419,6 +529,32 @@ const CosmicMultiplicationQuest = () => {
     // Track answer for metrics
     const questionKey = `${currentQuestion.multiplicand}x${currentQuestion.multiplier}`;
     const planet = planets.find((p) => p.id === currentPlanet);
+    
+    // Calculate response time in seconds
+    const fullTimeLimit = getDifficultyTimeLimit(planet.difficulty);
+    const secondsUsed = fullTimeLimit - timeRemaining;
+    
+    // Update attempt counts for this question
+    setAttemptCounts(prev => ({
+      ...prev,
+      [questionKey]: (prev[questionKey] || 0) + 1
+    }));
+    
+    // Track response time (only for correct answers)
+    if (isCorrect) {
+      // Store response time with the table number as the key prefix
+      const tableKey = `table_${currentQuestion.multiplicand}`;
+      setResponseTimes(prev => ({
+        ...prev,
+        [tableKey]: {
+          ...(prev[tableKey] || {}),
+          [questionKey]: [
+            ...(prev[tableKey]?.[questionKey] || []),
+            secondsUsed
+          ]
+        }
+      }));
+    }
 
     if (isCorrect) {
       // Calculate points based on time remaining and difficulty
@@ -503,14 +639,24 @@ const CosmicMultiplicationQuest = () => {
       });
 
       // Check if user can unlock the next planet
-      // Only unlock if they have high mastery AND have answered quickly multiple times
+      // Only unlock if they have high mastery, answered quickly multiple times, AND achieved expert rank
       const currentMastery = planetMastery[currentPlanet] || 0;
       const fastAnswersCount = fastAnswers[currentPlanet] || 0;
+      
+      // Get average response time and player rank for this table
+      const currentTable = planets.find(p => p.id === currentPlanet).table;
+      const avgResponseTime = getAverageResponseTime(currentTable);
+      const playerRank = avgResponseTime ? getPlayerRank(avgResponseTime) : null;
+      
+      // Get the minimum rank required to unlock the next planet (Expert or better)
+      const hasRequiredRank = playerRank && 
+        ['Expert', 'Master', 'Grandmaster'].includes(playerRank.rank);
 
       // Check for planet unlock conditions
       if (
         currentMastery >= 85 &&
         fastAnswersCount >= 10 &&
+        hasRequiredRank &&
         !unlockedPlanets.includes(currentPlanet + 1) &&
         currentPlanet < planets.length
       ) {
@@ -599,6 +745,9 @@ const CosmicMultiplicationQuest = () => {
     setTimerRunning(false);
     setMiniGameActive(true);
     setMiniGameType(Math.random() < 0.5 ? "asteroid" : "landing");
+    
+    // Clear any existing feedback when starting a mini-game
+    setFeedback("");
 
     // Generate mini-game question with multiple-choice options
     const firstNum = Math.floor(Math.random() * 12) + 1;
@@ -655,8 +804,6 @@ const CosmicMultiplicationQuest = () => {
   const completeMiniGame = (selectedAnswer) => {
     const success = selectedAnswer === currentQuestion.answer;
 
-    setMiniGameActive(false);
-
     if (success) {
       // Use rounded integer points
       const bonusPoints = 50;
@@ -666,12 +813,12 @@ const CosmicMultiplicationQuest = () => {
       let successMessage;
       
       if (miniGameType === "asteroid") {
-        successMessage = `MISSION SUCCESS! +${bonusPoints} points\nYou've successfully navigated through the asteroid field!`;
+        successMessage = `🎯 MISSION SUCCESS! 🎯\n+${bonusPoints} points\nYou've successfully navigated through the asteroid field!`;
       } else {
-        successMessage = `MISSION SUCCESS! +${bonusPoints} points\nPerfect landing achieved on the planetary surface!`;
+        successMessage = `🎯 MISSION SUCCESS! 🎯\n+${bonusPoints} points\nPerfect landing achieved on the planetary surface!`;
       }
       
-      setFeedback(successMessage);
+      setMiniGameFeedback(successMessage);
       
       // Add badge
       setBadges((prev) => [
@@ -679,23 +826,258 @@ const CosmicMultiplicationQuest = () => {
         `${miniGameType === "asteroid" ? "Asteroid Dodger" : "Safe Lander"}`,
       ]);
     } else {
-      setFeedback(
+      setMiniGameFeedback(
         `Mission failed. The answer was ${currentQuestion.answer}.`
       );
     }
 
-    // Show feedback for a bit longer on mini-games to make it more noticeable
+    // Generate the next question in advance but don't show it yet
+    const planet = planets.find((p) => p.id === currentPlanet);
+    const multiplicand = planet.table;
+    
+    // Get a multiplier that's different from the previous one
+    // and preferentially choose difficult multipliers based on metrics
+    let multiplier;
+    const tableKey = `table_${multiplicand}`;
+    const tableData = responseTimes[tableKey] || {};
+    
+    // Track which multipliers have been shown the least
+    // Use attemptCounts to determine how many times each multiplier has been shown
+    const multiplierCounts = {};
+    
+    // Count appearances of each multiplier for this table
+    for (let i = 1; i <= 12; i++) {
+      const questionKey = `${multiplicand}x${i}`;
+      multiplierCounts[i] = attemptCounts[questionKey] || 0;
+    }
+    
+    // Create an array of all multipliers except the previous one
+    const availableMultipliers = Array.from({ length: 12 }, (_, i) => i + 1)
+      .filter(mult => mult !== previousMultiplier);
+    
+    // Determine selection strategy
+    const random = Math.random();
+    
+    if (random < 0.4) {
+      // 40% chance: Prioritize least shown multipliers
+      // Sort by lowest appearance count
+      availableMultipliers.sort((a, b) => multiplierCounts[a] - multiplierCounts[b]);
+      
+      // Pick one of the least shown multipliers (with some randomness)
+      // Take the first 3 least shown or all if less than 3 are available
+      const leastShownCount = Math.min(3, availableMultipliers.length);
+      multiplier = availableMultipliers[Math.floor(Math.random() * leastShownCount)];
+    }
+    else if (random < 0.8 && Object.keys(tableData).length >= 6) {
+      // 40% chance: Use performance-based selection (when we have enough data)
+      // Create a list of all multipliers with their average response times
+      const multiplierPerformance = availableMultipliers.map(mult => {
+        const questionKey = `${multiplicand}x${mult}`;
+        const times = tableData[questionKey] || [];
+        // Default to 0 if no data (will be least prioritized)
+        const avgTime = times.length > 0 
+          ? times.reduce((sum, t) => sum + t, 0) / times.length 
+          : 0;
+        return { multiplier: mult, avgTime };
+      });
+      
+      if (multiplierPerformance.length > 0) {
+        // Weight by avg time - slower times get higher probability
+        const totalWeight = multiplierPerformance.reduce((sum, item) => sum + Math.max(1, item.avgTime), 0);
+        let randomValue = Math.random() * totalWeight;
+        
+        for (const item of multiplierPerformance) {
+          const weight = Math.max(1, item.avgTime); // Ensure even unseen items have a chance
+          if (randomValue <= weight) {
+            multiplier = item.multiplier;
+            break;
+          }
+          randomValue -= weight;
+        }
+        
+        // Fallback if something goes wrong with weighted selection
+        if (!multiplier) {
+          multiplier = multiplierPerformance[
+            Math.floor(Math.random() * multiplierPerformance.length)
+          ].multiplier;
+        }
+      } else {
+        // Should never reach here since we've filtered previousMultiplier
+        multiplier = availableMultipliers[Math.floor(Math.random() * availableMultipliers.length)];
+      }
+    } else {
+      // 20% chance: Pure random selection from available multipliers
+      multiplier = availableMultipliers[Math.floor(Math.random() * availableMultipliers.length)];
+    }
+    
+    // Save this multiplier as the previous one for next time
+    setPreviousMultiplier(multiplier);
+    
+    const correctAnswer = multiplicand * multiplier;
+
+    // Generate answer options
+    let wrongAnswers = [];
+    while (wrongAnswers.length < 3) {
+      let wrongAnswer;
+      const errorType = Math.random();
+
+      if (errorType < 0.3) {
+        const offset = Math.floor(Math.random() * 3) + 1;
+        wrongAnswer = correctAnswer + (Math.random() < 0.5 ? offset : -offset);
+      } else if (errorType < 0.6) {
+        wrongAnswer = multiplicand + multiplier;
+      } else if (errorType < 0.8) {
+        const tableOffset = Math.floor(Math.random() * 2) + 1;
+        const wrongTable =
+          multiplicand + (Math.random() < 0.5 ? tableOffset : -tableOffset);
+        wrongAnswer = wrongTable * multiplier;
+      } else {
+        const range = Math.max(5, Math.floor(correctAnswer * 0.2));
+        wrongAnswer =
+          correctAnswer + Math.floor(Math.random() * range * 2) - range;
+      }
+
+      if (
+        wrongAnswer > 0 &&
+        wrongAnswer !== correctAnswer &&
+        !wrongAnswers.includes(wrongAnswer)
+      ) {
+        wrongAnswers.push(wrongAnswer);
+      }
+    }
+
+    // Combine and shuffle options
+    const options = [correctAnswer, ...wrongAnswers];
+    for (let i = options.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [options[i], options[j]] = [options[j], options[i]];
+    }
+
+    // Prepare the next question
+    const nextQuestion = {
+      multiplicand,
+      multiplier,
+      answer: correctAnswer,
+      timeLimit: getDifficultyTimeLimit(planet.difficulty),
+    };
+    
+    // Show feedback for a bit, then transition to the new question
     setTimeout(() => {
-      generateQuestion();
+      // Perform a quick, clean transition
+      setMiniGameActive(false);
+      setMiniGameFeedback("");
+      setCurrentQuestion(nextQuestion);
+      setAnswerOptions(options);
+      setTimeRemaining(nextQuestion.timeLimit);
+      setFeedback("");
+      setTimerRunning(true);
     }, 2000);
   };
 
   // Handle planet selection
   const selectPlanet = (planetId) => {
     if (unlockedPlanets.includes(planetId)) {
+      // First update the current planet
       setCurrentPlanet(planetId);
-      startGame();
+      
+      // Then start the game with the new planet's table
+      const selectedPlanet = planets.find(p => p.id === planetId);
+      
+      // Reset any previous state
+      setMiniGameActive(false);
+      setMiniGameFeedback("");
+      setFeedback("");
+      setPreviousMultiplier(null);
+      
+      // Start with a fresh game using the selected planet's table
+      startGameWithPlanet(selectedPlanet);
     }
+  };
+  
+  // Start a game with a specific planet
+  const startGameWithPlanet = (planet) => {
+    setGameState("game");
+    setScore(0);
+    setLives(3);
+    
+    // Generate a question for this specific planet
+    const multiplicand = planet.table;
+    
+    // Use our improved multiplier selection that prioritizes least shown numbers
+    // But simplify for first question of a planet (no performance data needed)
+    const multiplierCounts = {};
+    
+    // Count appearances of each multiplier for this table
+    for (let i = 1; i <= 12; i++) {
+      const questionKey = `${multiplicand}x${i}`;
+      multiplierCounts[i] = attemptCounts[questionKey] || 0;
+    }
+    
+    // For first question, prioritize multipliers that have been shown the least
+    const availableMultipliers = Array.from({ length: 12 }, (_, i) => i + 1);
+    availableMultipliers.sort((a, b) => multiplierCounts[a] - multiplierCounts[b]);
+    
+    // Pick one of the least shown multipliers
+    // For variety, randomize among the 3 least shown
+    const leastShownCount = Math.min(3, availableMultipliers.length);
+    const multiplier = availableMultipliers[Math.floor(Math.random() * leastShownCount)];
+    
+    const correctAnswer = multiplicand * multiplier;
+    
+    // Save this multiplier as the previous one for next time
+    setPreviousMultiplier(multiplier);
+    
+    // Generate answer options
+    let wrongAnswers = [];
+    while (wrongAnswers.length < 3) {
+      let wrongAnswer;
+      const errorType = Math.random();
+
+      if (errorType < 0.3) {
+        const offset = Math.floor(Math.random() * 3) + 1;
+        wrongAnswer = correctAnswer + (Math.random() < 0.5 ? offset : -offset);
+      } else if (errorType < 0.6) {
+        wrongAnswer = multiplicand + multiplier;
+      } else if (errorType < 0.8) {
+        const tableOffset = Math.floor(Math.random() * 2) + 1;
+        const wrongTable =
+          multiplicand + (Math.random() < 0.5 ? tableOffset : -tableOffset);
+        wrongAnswer = wrongTable * multiplier;
+      } else {
+        const range = Math.max(5, Math.floor(correctAnswer * 0.2));
+        wrongAnswer =
+          correctAnswer + Math.floor(Math.random() * range * 2) - range;
+      }
+
+      if (
+        wrongAnswer > 0 &&
+        wrongAnswer !== correctAnswer &&
+        !wrongAnswers.includes(wrongAnswer)
+      ) {
+        wrongAnswers.push(wrongAnswer);
+      }
+    }
+
+    // Combine and shuffle options
+    const options = [correctAnswer, ...wrongAnswers];
+    for (let i = options.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [options[i], options[j]] = [options[j], options[i]];
+    }
+
+    // Create the new question
+    const newQuestion = {
+      multiplicand,
+      multiplier,
+      answer: correctAnswer,
+      timeLimit: getDifficultyTimeLimit(planet.difficulty),
+    };
+
+    // Update the state with the new question
+    setCurrentQuestion(newQuestion);
+    setAnswerOptions(options);
+    setTimeRemaining(newQuestion.timeLimit);
+    setTimerRunning(true);
   };
 
   // Reset all progress but keep the same profile
@@ -719,6 +1101,9 @@ const CosmicMultiplicationQuest = () => {
       setBadges([]);
       setPlanetMastery({});
       setFastAnswers({});
+      setResponseTimes({});
+      setAttemptCounts({});
+      setShowPerformanceView(false);
 
       // Clear specific items from localStorage
       const keysToRemove = [
@@ -734,6 +1119,8 @@ const CosmicMultiplicationQuest = () => {
         "cosmicQuest_planetMastery",
         "cosmicQuest_fastAnswers",
         "cosmicQuest_lastPlayed",
+        "cosmicQuest_responseTimes",
+        "cosmicQuest_attemptCounts",
       ];
 
       keysToRemove.forEach((key) => {
@@ -788,6 +1175,9 @@ const CosmicMultiplicationQuest = () => {
         setPlanetMastery({});
         setFastAnswers({});
         setLastPlayed(null);
+        setResponseTimes({});
+        setAttemptCounts({});
+        setShowPerformanceView(false);
 
         // Show confirmation and reload the page to ensure a fresh start
         alert("New profile created successfully! Starting fresh...");
@@ -828,6 +1218,120 @@ const CosmicMultiplicationQuest = () => {
     return () => clearTimeout(timer);
   }, [timerRunning, timeRemaining, lives, currentQuestion]);
 
+  // Determine rank based on average response time
+  const getPlayerRank = (avgResponseTime) => {
+    // Fix the boundary condition issue by using strict inequalities for all thresholds
+    if (avgResponseTime > 15) return { rank: "Noob", color: "text-gray-400" };
+    if (avgResponseTime > 12) return { rank: "Apprentice", color: "text-green-400" };
+    if (avgResponseTime > 9) return { rank: "Journeyman", color: "text-blue-400" };
+    if (avgResponseTime > 6) return { rank: "Expert", color: "text-yellow-400" };
+    if (avgResponseTime > 3) return { rank: "Master", color: "text-orange-400" };
+    // Only Grandmaster if strictly less than 3 seconds
+    if (avgResponseTime <= 3) return { rank: "Grandmaster", color: "text-purple-400" };
+    
+    // Fallback (should never reach here)
+    return { rank: "Unknown", color: "text-gray-400" };
+  };
+  
+  // Unit test function for rank calculation
+  const testRankCalculation = () => {
+    const testCases = [
+      { time: 16.0, expectedRank: "Noob" },
+      { time: 15.1, expectedRank: "Noob" },
+      { time: 15.0, expectedRank: "Apprentice" },
+      { time: 12.1, expectedRank: "Apprentice" },
+      { time: 12.0, expectedRank: "Journeyman" },
+      { time: 9.1, expectedRank: "Journeyman" },
+      { time: 9.0, expectedRank: "Expert" },
+      { time: 6.1, expectedRank: "Expert" },
+      { time: 6.0, expectedRank: "Master" },
+      { time: 3.1, expectedRank: "Master" },
+      { time: 3.0, expectedRank: "Grandmaster" },
+      { time: 2.9, expectedRank: "Grandmaster" },
+    ];
+    
+    const results = testCases.map(test => {
+      const actual = getPlayerRank(test.time).rank;
+      const passed = actual === test.expectedRank;
+      return {
+        time: test.time,
+        expected: test.expectedRank,
+        actual,
+        passed
+      };
+    });
+    
+    const allPassed = results.every(r => r.passed);
+    console.log("Rank Calculation Test Results:", results);
+    console.log("All tests passed:", allPassed);
+    
+    // Check specific case for 3.3s
+    const specificCase = getPlayerRank(3.3).rank;
+    console.log("Rank for 3.3s:", specificCase);
+    
+    return { allPassed, results };
+  };
+  
+  // Run tests in development environment
+  if (process.env.NODE_ENV === 'development') {
+    // Run tests after component mounts
+    useEffect(() => {
+      console.log("Running rank calculation tests...");
+      testRankCalculation();
+    }, []);
+  }
+  
+  // Calculate average response time for a table and determine max average for any fact
+  const getAverageResponseTime = (tableNumber) => {
+    const tableKey = `table_${tableNumber}`;
+    const tableData = responseTimes[tableKey];
+    
+    if (!tableData) return null;
+    
+    // Check if the player has answered all multipliers (1-12) for this table
+    const answeredMultipliers = Object.keys(tableData).map(key => parseInt(key.split('x')[1]));
+    const hasAllMultipliers = Array.from({ length: 12 }, (_, i) => i + 1)
+      .every(multiplier => answeredMultipliers.includes(multiplier));
+    
+    // If not all multipliers have been answered, don't assign a rank yet
+    if (!hasAllMultipliers) return null;
+    
+    // Calculate average response time for each individual multiplication fact
+    const factAverages = [];
+    
+    // For debugging, track individual averages
+    const individualAverages = {};
+    
+    // Check each multiplication fact (1-12)
+    for (let i = 1; i <= 12; i++) {
+      const factKey = `${tableNumber}x${i}`;
+      const times = tableData[factKey] || [];
+      
+      if (times.length > 0) {
+        // Calculate average for this specific fact
+        const factSum = times.reduce((acc, time) => acc + time, 0);
+        const factAvg = Math.round((factSum / times.length) * 10) / 10;
+        
+        // Store for debugging
+        individualAverages[factKey] = factAvg;
+        
+        // Add to our list of fact averages
+        factAverages.push(factAvg);
+      }
+    }
+    
+    if (factAverages.length === 0) return null;
+    
+    // Log individual averages for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Table ${tableNumber} individual fact averages:`, individualAverages);
+    }
+    
+    // Return the MAXIMUM average response time among all facts
+    // This ensures the player only gets a rank if ALL facts are at or below the threshold
+    return Math.max(...factAverages);
+  };
+
   // Get mastery percentage for each multiplication table
   const getMasteryData = () => {
     return planets.map((planet) => {
@@ -846,11 +1350,25 @@ const CosmicMultiplicationQuest = () => {
       const total = totalCorrect + totalWrong;
 
       const mastery = total > 0 ? Math.floor((totalCorrect / total) * 100) : 0;
+      
+      // Calculate average response time for this table
+      const avgResponseTime = getAverageResponseTime(planet.table);
+      
+      // Calculate accuracy rate
+      const accuracyRate = total > 0 ? Math.floor((totalCorrect / total) * 100) : 0;
+      
+      // Get player rank based on average response time
+      const playerRank = avgResponseTime ? getPlayerRank(avgResponseTime) : null;
 
       return {
         ...planet,
         mastery,
         totalQuestions: total,
+        avgResponseTime,
+        accuracyRate,
+        playerRank,
+        totalCorrect,
+        totalWrong
       };
     });
   };
@@ -1015,7 +1533,12 @@ const CosmicMultiplicationQuest = () => {
               <button
                 key={index}
                 onClick={() => submitAnswer(option)}
-                className="p-4 text-2xl text-center bg-gray-700 text-white rounded-lg border-2 border-gray-600 hover:border-blue-500 hover:bg-gray-600 transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={feedback !== ""} // Disable buttons when showing feedback
+                className={`p-4 text-2xl text-center ${
+                  feedback !== "" 
+                  ? "bg-gray-500 cursor-not-allowed opacity-70"
+                  : "bg-gray-700 hover:border-blue-500 hover:bg-gray-600 transform hover:scale-105"
+                } text-white rounded-lg border-2 border-gray-600 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500`}
                 style={{ boxShadow: "0 0 15px rgba(0, 0, 0, 0.3)" }}
               >
                 {option}
@@ -1026,7 +1549,7 @@ const CosmicMultiplicationQuest = () => {
           {feedback && (
             <div
               className={`mt-4 p-3 rounded-lg text-center text-lg font-semibold ${
-                feedback.includes("Correct") || feedback.includes("success")
+                feedback.includes("Correct") || feedback.includes("success") || feedback.includes("SUCCESS")
                   ? "bg-green-700 text-white"
                   : "bg-red-700 text-white"
               }`}
@@ -1036,7 +1559,7 @@ const CosmicMultiplicationQuest = () => {
                   ? "0 0 20px rgba(16, 185, 129, 0.7)" 
                   : feedback.includes("FAST") 
                   ? "0 0 15px rgba(16, 185, 129, 0.5)"
-                  : feedback.includes("success")
+                  : feedback.includes("SUCCESS") || feedback.includes("success")
                   ? "0 0 15px rgba(16, 185, 129, 0.6)"
                   : ""
               }}
@@ -1094,12 +1617,17 @@ const CosmicMultiplicationQuest = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 mb-6">
             {answerOptions.map((option, index) => (
               <button
                 key={index}
                 onClick={() => completeMiniGame(option)}
-                className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 px-6 rounded-lg transform transition-all hover:scale-105 relative overflow-hidden"
+                disabled={miniGameFeedback !== ""} // Disable buttons when showing feedback
+                className={`${
+                  miniGameFeedback !== "" 
+                  ? "bg-gray-500 cursor-not-allowed opacity-70" 
+                  : "bg-gray-700 hover:bg-gray-600 transform hover:scale-105"
+                } text-white font-bold py-4 px-6 rounded-lg transition-all relative overflow-hidden`}
                 style={{ boxShadow: "0 0 15px rgba(0, 0, 0, 0.3)" }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-600 opacity-20"></div>
@@ -1107,6 +1635,24 @@ const CosmicMultiplicationQuest = () => {
               </button>
             ))}
           </div>
+
+          {miniGameFeedback && (
+            <div
+              className={`mt-4 p-3 rounded-lg text-center text-lg font-semibold ${
+                miniGameFeedback.includes("SUCCESS")
+                  ? "bg-green-700 text-white"
+                  : "bg-red-700 text-white"
+              }`}
+              style={{
+                whiteSpace: "pre-line", // Allow line breaks in feedback
+                boxShadow: miniGameFeedback.includes("SUCCESS")
+                  ? "0 0 15px rgba(16, 185, 129, 0.6)"
+                  : ""
+              }}
+            >
+              {miniGameFeedback}
+            </div>
+          )}
         </div>
       )}
 
@@ -1131,13 +1677,272 @@ const CosmicMultiplicationQuest = () => {
     </div>
   );
 
+  // Render performance metrics view
+  const renderPerformanceMetrics = () => {
+    const masteryData = getMasteryData();
+    const tablesWithData = masteryData.filter(p => p.totalQuestions > 0);
+    
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-white">Performance Metrics</h1>
+          <button
+            onClick={() => setShowPerformanceView(false)}
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full shadow-lg"
+          >
+            Back to Galactic Map
+          </button>
+        </div>
+        
+        {/* Ranking System Explanation */}
+        <div className="bg-gray-800 bg-opacity-90 rounded-lg p-4 mb-6">
+          <h2 className="text-xl font-bold text-white mb-3">Ranking System</h2>
+          <p className="text-white text-sm mb-3">
+            Ranks are based on your <span className="text-yellow-400">slowest</span> average time across all multiplication facts in a table. 
+            Every multiplication fact must meet the threshold time for a rank to be awarded.
+          </p>
+          <div className="grid grid-cols-3 gap-4 md:grid-cols-6">
+            <div className="bg-gray-700 rounded-lg p-2 text-center">
+              <div className="text-gray-400 font-bold">Noob</div>
+              <div className="text-xs text-gray-300">&gt; 15s</div>
+            </div>
+            <div className="bg-gray-700 rounded-lg p-2 text-center">
+              <div className="text-green-400 font-bold">Apprentice</div>
+              <div className="text-xs text-gray-300">12.1-15s</div>
+            </div>
+            <div className="bg-gray-700 rounded-lg p-2 text-center">
+              <div className="text-blue-400 font-bold">Journeyman</div>
+              <div className="text-xs text-gray-300">9.1-12s</div>
+            </div>
+            <div className="bg-gray-700 rounded-lg p-2 text-center">
+              <div className="text-yellow-400 font-bold">Expert</div>
+              <div className="text-xs text-gray-300">6.1-9s</div>
+            </div>
+            <div className="bg-gray-700 rounded-lg p-2 text-center">
+              <div className="text-orange-400 font-bold">Master</div>
+              <div className="text-xs text-gray-300">3.1-6s</div>
+            </div>
+            <div className="bg-gray-700 rounded-lg p-2 text-center">
+              <div className="text-purple-400 font-bold">Grandmaster</div>
+              <div className="text-xs text-gray-300">≤ 3s</div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Overview of all tables */}
+        <div className="bg-gray-800 rounded-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold text-white mb-4">Table Rankings</h2>
+          
+          {tablesWithData.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-white">
+                <thead>
+                  <tr className="border-b border-gray-600">
+                    <th className="text-left py-2">Table</th>
+                    <th className="text-left py-2">Avg. Time</th>
+                    <th className="text-left py-2">Rank</th>
+                    <th className="text-left py-2">Accuracy</th>
+                    <th className="text-right py-2">Attempts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tablesWithData.map(planet => {
+                    // Count total attempts for this table
+                    const totalAttempts = Object.keys(attemptCounts)
+                      .filter(key => parseInt(key.split('x')[0]) === planet.table)
+                      .reduce((sum, key) => sum + attemptCounts[key], 0);
+                    
+                    return (
+                      <tr key={planet.id} className="border-b border-gray-700">
+                        <td className="py-3">
+                          <div className="flex items-center">
+                            <div className={`w-4 h-4 ${planet.color} rounded-full mr-2`}></div>
+                            <span>{planet.table}'s</span>
+                          </div>
+                        </td>
+                        <td>
+                          {planet.avgResponseTime 
+                            ? `${planet.avgResponseTime.toFixed(1)}s` 
+                            : "N/A"}
+                        </td>
+                        <td>
+                          {planet.playerRank && (
+                            <span className={planet.playerRank.color}>
+                              {planet.playerRank.rank}
+                            </span>
+                          )}
+                        </td>
+                        <td>{planet.accuracyRate}%</td>
+                        <td className="text-right">{totalAttempts}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-gray-400">
+              Complete missions to generate performance data.
+            </p>
+          )}
+        </div>
+        
+        {/* Detailed metrics with visualization */}
+        {tablesWithData.length > 0 && (
+          <div className="bg-gray-800 rounded-lg p-6 mb-8">
+            <h2 className="text-2xl font-bold text-white mb-4">Detailed Analysis</h2>
+            
+            {tablesWithData.map(planet => {
+              // Get specific facts for this table
+              const tableKey = `table_${planet.table}`;
+              const tableData = responseTimes[tableKey] || {};
+              const tableQuestions = Object.keys(tableData);
+              
+              if (tableQuestions.length === 0) return null;
+              
+              // Create "heatmap" data: sort by average response time
+              const questionPerformance = tableQuestions.map(q => {
+                const times = tableData[q];
+                const avgTime = times.reduce((sum, t) => sum + t, 0) / times.length;
+                const [multiplicand, multiplier] = q.split('x').map(Number);
+                return {
+                  question: q,
+                  multiplicand,
+                  multiplier,
+                  avgTime,
+                  attempts: attemptCounts[q] || 0
+                };
+              }).sort((a, b) => b.avgTime - a.avgTime); // Sort slowest first
+              
+              return (
+                <div key={planet.id} className="mb-8">
+                  <div className="flex items-center mb-3">
+                    <div className={`w-6 h-6 ${planet.color} rounded-full mr-2`}></div>
+                    <h3 className="text-xl font-bold text-white">
+                      {planet.table}'s Table
+                      {planet.playerRank && (
+                        <span className={`ml-3 ${planet.playerRank.color}`}>
+                          [{planet.playerRank.rank}]
+                        </span>
+                      )}
+                    </h3>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Statistics */}
+                    <div>
+                      <div className="bg-gray-700 rounded-lg p-4 mb-4">
+                        <h4 className="text-lg text-white mb-2">Statistics</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <div className="text-sm text-gray-400">Average Time</div>
+                            <div className="text-xl text-white">
+                              {planet.avgResponseTime ? `${planet.avgResponseTime.toFixed(1)}s` : "N/A"}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-400">Accuracy</div>
+                            <div className="text-xl text-white">{planet.accuracyRate}%</div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-400">Correct Answers</div>
+                            <div className="text-xl text-white">{planet.totalCorrect}</div>
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-400">Wrong Answers</div>
+                            <div className="text-xl text-white">{planet.totalWrong}</div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Practice Recommendations */}
+                      {questionPerformance.length > 0 && (
+                        <div className="bg-gray-700 rounded-lg p-4">
+                          <h4 className="text-lg text-white mb-2">Focus Practice On</h4>
+                          <ul className="space-y-1">
+                            {questionPerformance.slice(0, 3).map(q => (
+                              <li key={q.question} className="text-white">
+                                {q.multiplicand} × {q.multiplier} = {q.multiplicand * q.multiplier}
+                                <span className="text-yellow-400 ml-2">
+                                  ({q.avgTime.toFixed(1)}s avg)
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Heatmap-like visualization */}
+                    <div className="bg-gray-700 rounded-lg p-4">
+                      <h4 className="text-lg text-white mb-2">Response Time Heatmap</h4>
+                      <div className="grid grid-cols-3 gap-1">
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(multiplier => {
+                          const question = `${planet.table}x${multiplier}`;
+                          const performance = questionPerformance.find(q => q.question === question);
+                          
+                          // Determine color based on avg time
+                          let bgColor = "bg-gray-600"; // Default/no data
+                          
+                          if (performance) {
+                            if (performance.avgTime > 15) bgColor = "bg-red-700";
+                            else if (performance.avgTime > 12) bgColor = "bg-red-500";
+                            else if (performance.avgTime > 9) bgColor = "bg-yellow-500";
+                            else if (performance.avgTime > 6) bgColor = "bg-yellow-300";
+                            else if (performance.avgTime > 3) bgColor = "bg-green-500";
+                            else bgColor = "bg-green-300";
+                          }
+                          
+                          return (
+                            <div 
+                              key={multiplier} 
+                              className={`${bgColor} rounded-md p-2 text-center`}
+                              title={performance 
+                                ? `Average: ${performance.avgTime.toFixed(1)}s (${performance.attempts} attempts)`
+                                : "No data"}
+                            >
+                              <div className="text-xs text-white">{planet.table}×{multiplier}</div>
+                              {performance && (
+                                <div className="text-xs font-bold text-white">
+                                  {performance.avgTime.toFixed(1)}s
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Render metrics/galactic map
   const renderMetrics = () => {
+    // If showing performance view, render that instead
+    if (showPerformanceView) {
+      return renderPerformanceMetrics();
+    }
+    
     const masteryData = getMasteryData();
 
     return (
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-6">Galactic Map</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-white">Galactic Map</h1>
+          <button
+            onClick={() => setShowPerformanceView(true)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-full shadow-lg flex items-center"
+          >
+            <span className="mr-2">📊</span>
+            Performance Metrics
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-gray-800 rounded-lg p-6">
@@ -1166,6 +1971,8 @@ const CosmicMultiplicationQuest = () => {
                   <li>
                     • You need 85% accuracy and 10 fast answers to progress
                   </li>
+                  <li>• <span className="text-yellow-400">Expert rank</span> or higher is required to unlock new planets</li>
+                  <li>• You must answer all multipliers of a table to earn a rank</li>
                   <li>• Fast answers are based on your planet's difficulty:</li>
                   <li className="pl-4">- Easy: Answer within 10 seconds</li>
                   <li className="pl-4">- Medium: Answer within 8 seconds</li>
@@ -1242,6 +2049,18 @@ const CosmicMultiplicationQuest = () => {
                       </div>
                     </div>
 
+                    {/* Player rank for this planet */}
+                    {planetData.playerRank && (
+                      <div
+                        className="absolute top-1 left-1 text-xs bg-gray-900 px-2 py-1 rounded-full"
+                        style={{ boxShadow: "0 0 5px white" }}
+                      >
+                        <span className={planetData.playerRank.color}>
+                          {planetData.playerRank.rank}
+                        </span>
+                      </div>
+                    )}
+
                     {/* Fast answers counter */}
                     <div
                       className="absolute top-1 right-1 text-xs bg-gray-900 text-white px-2 py-1 rounded-full"
@@ -1269,8 +2088,13 @@ const CosmicMultiplicationQuest = () => {
             .map((planet) => (
               <div key={planet.id} className="mb-5">
                 <div className="flex justify-between text-white mb-1">
-                  <span>
+                  <span className="flex items-center">
                     {planet.name} ({planet.table}'s)
+                    {planet.playerRank && (
+                      <span className={`ml-2 ${planet.playerRank.color} text-sm`}>
+                        [{planet.playerRank.rank}]
+                      </span>
+                    )}
                   </span>
                   <div className="flex space-x-4">
                     <span
@@ -1320,6 +2144,16 @@ const CosmicMultiplicationQuest = () => {
                   ></div>
                 </div>
 
+                {/* Average response time indicator (if available) */}
+                {planet.avgResponseTime && (
+                  <div className="flex items-center text-white text-xs mt-1 mb-1">
+                    <span className="text-gray-400 mr-2">Avg. Time:</span>
+                    <span className={planet.playerRank ? planet.playerRank.color : "text-white"}>
+                      {planet.avgResponseTime.toFixed(1)}s
+                    </span>
+                  </div>
+                )}
+
                 {/* Fast answers progress bar */}
                 <div className="w-full bg-gray-700 rounded-full h-2">
                   <div
@@ -1334,9 +2168,14 @@ const CosmicMultiplicationQuest = () => {
                 </div>
 
                 {/* Unlock status */}
-                {planet.mastery >= 85 && (fastAnswers[planet.id] || 0) >= 10 ? (
+                {planet.mastery >= 85 && (fastAnswers[planet.id] || 0) >= 10 && 
+                 planet.playerRank && ['Expert', 'Master', 'Grandmaster'].includes(planet.playerRank.rank) ? (
                   <div className="text-xs text-green-400 mt-1">
-                    Requirements met for next planet!
+                    All requirements met for next planet!
+                  </div>
+                ) : planet.mastery >= 85 && (fastAnswers[planet.id] || 0) >= 10 ? (
+                  <div className="text-xs text-yellow-400 mt-1">
+                    Need Expert rank or higher to progress
                   </div>
                 ) : planet.mastery >= 85 ? (
                   <div className="text-xs text-yellow-400 mt-1">
@@ -1391,6 +2230,69 @@ const CosmicMultiplicationQuest = () => {
             >
               Create New Profile
             </button>
+            
+            {process.env.NODE_ENV === 'development' && (
+              <>
+                <button
+                  onClick={() => {
+                    const results = testRankCalculation();
+                    alert(`Rank Calculation Tests: ${results.allPassed ? 'PASSED' : 'FAILED'}\n\n` + 
+                          `Specific test for 3.3s: Rank = ${getPlayerRank(3.3).rank}\n\n` +
+                          `See console for detailed results.`);
+                  }}
+                  className="text-blue-400 underline text-sm hover:text-blue-300 transition-colors ml-6"
+                >
+                  Run Tests
+                </button>
+                <button
+                  onClick={() => {
+                    // Create a diagnostic view of response times 
+                    const tableNumber = 4; // For example, examine the 4's table
+                    const tableKey = `table_${tableNumber}`;
+                    const tableData = responseTimes[tableKey] || {};
+                    
+                    // Calculate average for each fact
+                    const factAverages = {};
+                    for (let i = 1; i <= 12; i++) {
+                      const factKey = `${tableNumber}x${i}`;
+                      const times = tableData[factKey] || [];
+                      
+                      if (times.length > 0) {
+                        // Calculate the average
+                        const factSum = times.reduce((acc, time) => acc + time, 0);
+                        factAverages[factKey] = Math.round((factSum / times.length) * 10) / 10;
+                      } else {
+                        factAverages[factKey] = "No data";
+                      }
+                    }
+                    
+                    // Get the maximum average (worst performance)
+                    const maxAvg = Math.max(...Object.values(factAverages)
+                      .filter(val => typeof val === 'number'));
+                    
+                    // Get what the rank should be
+                    const rank = getPlayerRank(maxAvg);
+                    
+                    // Create diagnostic message
+                    let message = `DIAGNOSTIC: ${tableNumber}'s Table\n\n`;
+                    message += `Maximum average time: ${maxAvg}s\n`;
+                    message += `This gives a rank of: ${rank.rank}\n\n`;
+                    message += "Individual fact averages:\n";
+                    
+                    // Add each fact's average
+                    Object.keys(factAverages).sort().forEach(key => {
+                      message += `${key}: ${factAverages[key]}\n`;
+                    });
+                    
+                    // Show the diagnostic
+                    alert(message);
+                  }}
+                  className="text-green-400 underline text-sm hover:text-green-300 transition-colors ml-6"
+                >
+                  Diagnostic
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
