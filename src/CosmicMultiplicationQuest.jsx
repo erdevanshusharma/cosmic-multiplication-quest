@@ -358,12 +358,8 @@ const CosmicMultiplicationQuest = () => {
       }));
 
       // Track fast answers for the current planet (answers where time remaining is high)
-      const isFastAnswer = 
-        (planet.table <= 5 && timeRemaining >= 10) ||
-        (planet.table <= 9 && timeRemaining >= 8) ||
-        (planet.table <= 12 && timeRemaining >= 6) ||
-        (planet.table <= 16 && timeRemaining >= 5) ||
-        (planet.table >= 17 && timeRemaining >= 4);
+      // With 15 second timer for all questions, consider answers with 10+ seconds remaining as fast
+      const isFastAnswer = timeRemaining >= 10;
 
       if (isFastAnswer) {
         setFastAnswers((prev) => ({

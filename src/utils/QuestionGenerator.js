@@ -1,16 +1,7 @@
-// Get time limit based on table number
-export const getDifficultyTimeLimit = (tableNumber) => {
-  // Tables 3-5: 15 seconds
-  // Tables 6-9: 12 seconds
-  // Tables 10-12: 10 seconds
-  // Tables 13-16: 8 seconds
-  // Tables 17-20: 6 seconds
-  
-  if (tableNumber <= 5) return 15;
-  if (tableNumber <= 9) return 12;
-  if (tableNumber <= 12) return 10;
-  if (tableNumber <= 16) return 8;
-  return 6; // Tables 17-20
+// Get time limit - always 15 seconds regardless of planet/table
+export const getDifficultyTimeLimit = () => {
+  // All tables now have the same time limit of 15 seconds
+  return 15;
 };
 
 // Generate a new multiplication question
@@ -221,6 +212,7 @@ export const generateMiniGameQuestion = () => {
     multiplicand: firstNum,
     multiplier: secondNum,
     answer: correctAnswer,
+    timeLimit: 15, // Fixed 15 seconds time limit for mini-games too
   };
 
   return {
