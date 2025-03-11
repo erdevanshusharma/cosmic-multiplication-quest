@@ -83,16 +83,24 @@ const CosmicMultiplicationQuest = () => {
   useEffect(() => {
     saveToLocalStorage("cosmicQuest_gameState", gameState);
     
+    // Get the base URL from import.meta.env (Vite exposes this)
+    const baseUrl = import.meta.env.BASE_URL || '/';
+    
     // Update URL based on game state
-    let newUrl = window.location.pathname;
+    let newPath = '';
     
     if (gameState === "menu") {
-      newUrl = "/";
+      newPath = "";
     } else if (gameState === "game") {
-      newUrl = `/play/${currentPlanet}`;
+      newPath = `play/${currentPlanet}`;
     } else if (gameState === "metrics") {
-      newUrl = "/stats";
+      newPath = "stats";
     }
+    
+    // Combine with base URL properly
+    const newUrl = baseUrl === '/' 
+      ? `/${newPath}` 
+      : `${baseUrl}${newPath ? newPath : ''}`;
     
     // Update URL without full page reload
     window.history.pushState({gameState, currentPlanet}, "", newUrl);
@@ -201,14 +209,19 @@ const CosmicMultiplicationQuest = () => {
     
     // Initial URL processing
     const processInitialUrl = () => {
+      const baseUrl = import.meta.env.BASE_URL || '/';
       const path = window.location.pathname;
-      if (path.includes("/play/")) {
-        const planetId = parseInt(path.split("/play/")[1]) || 1;
+      
+      // Remove the base URL to correctly process paths
+      const relativePath = path.replace(baseUrl, '/');
+      
+      if (relativePath.includes("/play/")) {
+        const planetId = parseInt(relativePath.split("/play/")[1]) || 1;
         if (unlockedPlanets.includes(planetId)) {
           setCurrentPlanet(planetId);
           setGameState("game");
         }
-      } else if (path.includes("/stats")) {
+      } else if (relativePath.includes("/stats")) {
         setGameState("metrics");
       } else {
         setGameState("menu");
