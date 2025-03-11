@@ -399,10 +399,10 @@ const CosmicMultiplicationQuest = () => {
         ? getPlayerRank(avgResponseTime)
         : null;
 
-      // Get the minimum rank required to unlock the next planet (Expert or better)
+      // Get the minimum rank required to unlock the next planet (Pro or better)
       const hasRequiredRank =
         playerRank &&
-        ["Expert", "Master", "Grandmaster"].includes(playerRank.rank);
+        ["Pro", "Hacker", "God"].includes(playerRank.rank);
 
       // Check for planet unlock conditions
       if (

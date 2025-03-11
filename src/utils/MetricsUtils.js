@@ -1,16 +1,16 @@
 // Determine rank based on average response time
 export const getPlayerRank = (avgResponseTime) => {
-  // Fix the boundary condition issue by using strict inequalities for all thresholds
-  if (avgResponseTime > 9) return { rank: "Noob", color: "text-gray-400" };
-  if (avgResponseTime > 6)
-    return { rank: "Expert", color: "text-yellow-400" };
+  // Minecraft-inspired ranks with appropriate colors
+  if (avgResponseTime > 10) return { rank: "Noob", color: "text-gray-400" };
+  if (avgResponseTime > 5)
+    return { rank: "Noob", color: "text-gray-400" };
   if (avgResponseTime > 3)
-    return { rank: "Master", color: "text-orange-400" };
+    return { rank: "Pro", color: "text-blue-400" };
   if (avgResponseTime > 1)
-    return { rank: "Grandmaster", color: "text-purple-400" };
+    return { rank: "Hacker", color: "text-gray-900" };
   // God rank for 1 second or under
   if (avgResponseTime <= 1)
-    return { rank: "God", color: "text-rose-500" };
+    return { rank: "God", color: "text-pink-300" };
 
   // Fallback (should never reach here)
   return { rank: "Unknown", color: "text-gray-400" };
