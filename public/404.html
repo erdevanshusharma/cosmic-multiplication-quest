@@ -3,23 +3,14 @@
   <head>
     <meta charset="utf-8">
     <title>Cosmic Multiplication Quest</title>
-    <script type="text/javascript">
-      // Single Page Apps for GitHub Pages
-      // MIT License
-      // https://github.com/rafgraph/spa-github-pages
-      var pathSegmentsToKeep = 1; // Keeps 'cosmic-multiplication-quest'
-
-      var l = window.location;
-      l.replace(
-        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
-        l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/').replace(/&/g, '~and~') +
-        (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
-        l.hash
-      );
+    <script>
+      // Simple redirect to base app, preserving any path for client-side routing
+      sessionStorage.redirect = window.location.href;
+      window.location.href = "/cosmic-multiplication-quest/";
     </script>
   </head>
   <body>
-    Redirecting...
+    <h1>Redirecting...</h1>
+    <p>If you are not redirected automatically, please click <a href="/cosmic-multiplication-quest/">here</a>.</p>
   </body>
 </html>

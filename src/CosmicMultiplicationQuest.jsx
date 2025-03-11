@@ -83,24 +83,22 @@ const CosmicMultiplicationQuest = () => {
   useEffect(() => {
     saveToLocalStorage("cosmicQuest_gameState", gameState);
     
-    // Get the base URL from import.meta.env (Vite exposes this)
-    const baseUrl = import.meta.env.BASE_URL || '/';
+    // Always use the correct base URL for GitHub Pages
+    const baseUrl = '/cosmic-multiplication-quest/';
     
     // Update URL based on game state
     let newPath = '';
     
     if (gameState === "menu") {
-      newPath = "";
+      newPath = baseUrl;
     } else if (gameState === "game") {
-      newPath = `play/${currentPlanet}`;
+      newPath = `${baseUrl}play/${currentPlanet}`;
     } else if (gameState === "metrics") {
-      newPath = "stats";
+      newPath = `${baseUrl}stats`;
     }
     
-    // Combine with base URL properly
-    const newUrl = baseUrl === '/' 
-      ? `/${newPath}` 
-      : `${baseUrl}${newPath ? newPath : ''}`;
+    // Use the final path directly - no combination needed
+    const newUrl = newPath;
     
     // Update URL without full page reload
     window.history.pushState({gameState, currentPlanet}, "", newUrl);
@@ -209,19 +207,19 @@ const CosmicMultiplicationQuest = () => {
     
     // Initial URL processing
     const processInitialUrl = () => {
-      const baseUrl = import.meta.env.BASE_URL || '/';
+      const baseUrl = '/cosmic-multiplication-quest/';
       const path = window.location.pathname;
       
-      // Remove the base URL to correctly process paths
-      const relativePath = path.replace(baseUrl, '/');
-      
-      if (relativePath.includes("/play/")) {
-        const planetId = parseInt(relativePath.split("/play/")[1]) || 1;
+      // Handle paths directly
+      if (path.includes(`${baseUrl}play/`)) {
+        const planetIdMatch = path.match(/\/play\/(\d+)/);
+        const planetId = planetIdMatch ? parseInt(planetIdMatch[1]) : 1;
+        
         if (unlockedPlanets.includes(planetId)) {
           setCurrentPlanet(planetId);
           setGameState("game");
         }
-      } else if (relativePath.includes("/stats")) {
+      } else if (path.includes(`${baseUrl}stats`)) {
         setGameState("metrics");
       } else {
         setGameState("menu");
