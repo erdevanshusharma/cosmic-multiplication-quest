@@ -7,7 +7,7 @@ export const getPlayerRank = (avgResponseTime) => {
   if (avgResponseTime > 3)
     return { rank: "Pro", color: "text-cyan-300" };
   if (avgResponseTime > 1)
-    return { rank: "Hacker", color: "text-neutral-800" };
+    return { rank: "Hacker", color: "text-neutral-600" };
   // God rank for 1 second or under
   if (avgResponseTime <= 1)
     return { rank: "God", color: "text-amber-500" };

@@ -33,7 +33,7 @@ const HeatMap = ({ tableNumber, responseTimes, attemptCounts, correctAnswers, wr
     } else if (avgTime <= 1) {
       cellColor = "bg-amber-500"; // God (gold)
     } else if (avgTime <= 3) {
-      cellColor = "bg-neutral-800"; // Hacker (neutral-800)
+      cellColor = "bg-neutral-600"; // Hacker (neutral-600)
     } else if (avgTime <= 5) {
       cellColor = "bg-cyan-300"; // Pro (cyan)
     } else {
@@ -91,8 +91,8 @@ const HeatMap = ({ tableNumber, responseTimes, attemptCounts, correctAnswers, wr
           <span className="text-amber-500 text-xs font-bold">God ≤1s</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-neutral-800 rounded-sm mr-1"></div>
-          <span className="text-neutral-800 text-xs font-bold">Hacker ≤3s</span>
+          <div className="w-3 h-3 bg-neutral-600 rounded-sm mr-1"></div>
+          <span className="text-neutral-600 text-xs font-bold">Hacker ≤3s</span>
         </div>
         <div className="flex items-center">
           <div className="w-3 h-3 bg-cyan-300 rounded-sm mr-1"></div>
