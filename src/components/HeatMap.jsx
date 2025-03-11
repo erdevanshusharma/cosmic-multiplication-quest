@@ -31,13 +31,13 @@ const HeatMap = ({ tableNumber, responseTimes, attemptCounts, correctAnswers, wr
     if (avgTime === null) {
       cellColor = "bg-gray-700"; // Not attempted
     } else if (avgTime <= 1) {
-      cellColor = "bg-yellow-500"; // God (gold)
+      cellColor = "bg-amber-500"; // God (gold)
     } else if (avgTime <= 3) {
-      cellColor = "bg-gray-900"; // Hacker (black)
+      cellColor = "bg-neutral-800"; // Hacker (neutral-800)
     } else if (avgTime <= 5) {
-      cellColor = "bg-red-500"; // Pro (red)
+      cellColor = "bg-cyan-300"; // Pro (cyan)
     } else {
-      cellColor = "bg-green-500"; // Noob (green)
+      cellColor = "bg-blue-600"; // Noob (blue)
     }
     
     // Add data to grid
@@ -87,20 +87,20 @@ const HeatMap = ({ tableNumber, responseTimes, attemptCounts, correctAnswers, wr
       {/* Color legend matching updated rank system */}
       <div className="mt-2 flex flex-wrap gap-2 justify-center">
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-yellow-500 rounded-sm mr-1"></div>
-          <span className="text-yellow-500 text-xs font-bold">God ≤1s</span>
+          <div className="w-3 h-3 bg-amber-500 rounded-sm mr-1"></div>
+          <span className="text-amber-500 text-xs font-bold">God ≤1s</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-gray-900 rounded-sm mr-1"></div>
-          <span className="text-gray-900 text-xs font-bold">Hacker ≤3s</span>
+          <div className="w-3 h-3 bg-neutral-800 rounded-sm mr-1"></div>
+          <span className="text-neutral-800 text-xs font-bold">Hacker ≤3s</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-red-500 rounded-sm mr-1"></div>
-          <span className="text-red-500 text-xs font-bold">Pro ≤5s</span>
+          <div className="w-3 h-3 bg-cyan-300 rounded-sm mr-1"></div>
+          <span className="text-cyan-400 text-xs font-bold">Pro ≤5s</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-green-500 rounded-sm mr-1"></div>
-          <span className="text-green-500 text-xs font-bold">Noob ≤10s</span>
+          <div className="w-3 h-3 bg-blue-600 rounded-sm mr-1"></div>
+          <span className="text-blue-600 text-xs font-bold">Noob ≤10s</span>
         </div>
         <div className="flex items-center">
           <div className="w-3 h-3 bg-gray-700 rounded-sm mr-1"></div>
