@@ -26,18 +26,18 @@ const HeatMap = ({ tableNumber, responseTimes, attemptCounts, correctAnswers, wr
       : null;
     
     // Determine cell color based on response time (match rank colors)
-    // Match color scheme with player ranks (Minecraft-inspired)
+    // Match updated color scheme with player ranks
     let cellColor;
     if (avgTime === null) {
       cellColor = "bg-gray-700"; // Not attempted
     } else if (avgTime <= 1) {
-      cellColor = "bg-pink-300"; // God (peach/pink)
+      cellColor = "bg-yellow-500"; // God (gold)
     } else if (avgTime <= 3) {
       cellColor = "bg-gray-900"; // Hacker (black)
     } else if (avgTime <= 5) {
-      cellColor = "bg-blue-400"; // Pro (diamond blue)
+      cellColor = "bg-red-500"; // Pro (red)
     } else {
-      cellColor = "bg-gray-400"; // Noob (light gray)
+      cellColor = "bg-green-500"; // Noob (green)
     }
     
     // Add data to grid
@@ -84,23 +84,23 @@ const HeatMap = ({ tableNumber, responseTimes, attemptCounts, correctAnswers, wr
         ))}
       </div>
       
-      {/* Color legend matching rank system - Minecraft inspired */}
+      {/* Color legend matching updated rank system */}
       <div className="mt-2 flex flex-wrap gap-2 justify-center">
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-pink-300 rounded-sm mr-1"></div>
-          <span className="text-pink-300 text-xs">God ≤1s</span>
+          <div className="w-3 h-3 bg-yellow-500 rounded-sm mr-1"></div>
+          <span className="text-yellow-500 text-xs font-bold">God ≤1s</span>
         </div>
         <div className="flex items-center">
           <div className="w-3 h-3 bg-gray-900 rounded-sm mr-1"></div>
-          <span className="text-gray-900 text-xs">Hacker ≤3s</span>
+          <span className="text-gray-900 text-xs font-bold">Hacker ≤3s</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-blue-400 rounded-sm mr-1"></div>
-          <span className="text-blue-400 text-xs">Pro ≤5s</span>
+          <div className="w-3 h-3 bg-red-500 rounded-sm mr-1"></div>
+          <span className="text-red-500 text-xs font-bold">Pro ≤5s</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-gray-400 rounded-sm mr-1"></div>
-          <span className="text-gray-400 text-xs">Noob ≤10s</span>
+          <div className="w-3 h-3 bg-green-500 rounded-sm mr-1"></div>
+          <span className="text-green-500 text-xs font-bold">Noob ≤10s</span>
         </div>
         <div className="flex items-center">
           <div className="w-3 h-3 bg-gray-700 rounded-sm mr-1"></div>
