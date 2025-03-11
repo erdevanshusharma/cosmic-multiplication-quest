@@ -1,16 +1,16 @@
 // Determine rank based on average response time
 export const getPlayerRank = (avgResponseTime) => {
-  // Minecraft-inspired ranks with updated colors
-  if (avgResponseTime > 10) return { rank: "Noob", color: "text-blue-600" };
+  // Updated ranks with new color scheme
+  if (avgResponseTime > 10) return { rank: "Noob", color: "text-blue-800" };
   if (avgResponseTime > 5)
-    return { rank: "Noob", color: "text-blue-600" };
+    return { rank: "Journeyman", color: "text-violet-500" };
   if (avgResponseTime > 3)
-    return { rank: "Pro", color: "text-cyan-300" };
+    return { rank: "Pro", color: "text-sky-400" };
   if (avgResponseTime > 1)
-    return { rank: "Hacker", color: "text-neutral-600" };
+    return { rank: "Hacker", color: "text-rose-200" };
   // God rank for 1 second or under
   if (avgResponseTime <= 1)
-    return { rank: "God", color: "text-amber-500" };
+    return { rank: "God", color: "text-amber-100" };
 
   // Fallback (should never reach here)
   return { rank: "Unknown", color: "text-gray-400" };

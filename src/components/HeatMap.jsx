@@ -31,13 +31,15 @@ const HeatMap = ({ tableNumber, responseTimes, attemptCounts, correctAnswers, wr
     if (avgTime === null) {
       cellColor = "bg-gray-700"; // Not attempted
     } else if (avgTime <= 1) {
-      cellColor = "bg-amber-500"; // God (gold)
+      cellColor = "bg-amber-200"; // God (amber-100 with better contrast)
     } else if (avgTime <= 3) {
-      cellColor = "bg-neutral-600"; // Hacker (neutral-600)
+      cellColor = "bg-rose-300"; // Hacker (rose-200 with better contrast)
     } else if (avgTime <= 5) {
-      cellColor = "bg-cyan-300"; // Pro (cyan)
+      cellColor = "bg-sky-500"; // Pro (sky-400 with better contrast)
+    } else if (avgTime <= 10) {
+      cellColor = "bg-violet-600"; // Journeyman (violet-500 with better contrast)
     } else {
-      cellColor = "bg-blue-600"; // Noob (blue)
+      cellColor = "bg-blue-900"; // Noob (blue-800 with better contrast)
     }
     
     // Add data to grid
@@ -87,20 +89,24 @@ const HeatMap = ({ tableNumber, responseTimes, attemptCounts, correctAnswers, wr
       {/* Color legend matching updated rank system */}
       <div className="mt-2 flex flex-wrap gap-2 justify-center">
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-amber-500 rounded-sm mr-1"></div>
-          <span className="text-amber-500 text-xs font-bold">God ≤1s</span>
+          <div className="w-3 h-3 bg-amber-200 rounded-sm mr-1"></div>
+          <span className="text-white text-xs font-bold">God ≤1s</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-neutral-600 rounded-sm mr-1"></div>
-          <span className="text-neutral-600 text-xs font-bold">Hacker ≤3s</span>
+          <div className="w-3 h-3 bg-rose-300 rounded-sm mr-1"></div>
+          <span className="text-white text-xs font-bold">Hacker ≤3s</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-cyan-300 rounded-sm mr-1"></div>
-          <span className="text-cyan-400 text-xs font-bold">Pro ≤5s</span>
+          <div className="w-3 h-3 bg-sky-500 rounded-sm mr-1"></div>
+          <span className="text-white text-xs font-bold">Pro ≤5s</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-blue-600 rounded-sm mr-1"></div>
-          <span className="text-blue-600 text-xs font-bold">Noob ≤10s</span>
+          <div className="w-3 h-3 bg-violet-600 rounded-sm mr-1"></div>
+          <span className="text-white text-xs font-bold">Journeyman ≤10s</span>
+        </div>
+        <div className="flex items-center">
+          <div className="w-3 h-3 bg-blue-900 rounded-sm mr-1"></div>
+          <span className="text-white text-xs font-bold">Noob >10s</span>
         </div>
         <div className="flex items-center">
           <div className="w-3 h-3 bg-gray-700 rounded-sm mr-1"></div>

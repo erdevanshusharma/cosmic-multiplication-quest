@@ -50,9 +50,9 @@ const MainMenu = ({ startGame, setGameState, score, unlockedPlanets, correctAnsw
         <h3 className="text-xl mb-2">Mission Briefing:</h3>
         <p className="text-sm">
           Explore 18 unique planets, each representing a multiplication table
-          from 3 to 20. Answer correctly to earn points and unlock new planets!
-          Master the advanced tables to become a true Space Mathematician! Watch
-          out for special mini-games and collect spaceship parts along the way!
+          from 2 to 20. Answer correctly to earn points and unlock new planets!
+          Master the advanced tables to become a true Space Mathematician! 
+          Watch out for special mini-games to test your math skills!
         </p>
       </div>
 
