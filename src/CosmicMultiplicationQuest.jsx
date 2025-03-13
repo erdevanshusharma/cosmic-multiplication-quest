@@ -4,17 +4,28 @@ import { planets } from "./Constants";
 import {
   saveToLocalStorage,
   loadFromLocalStorage,
+  saveLearningModeResponseTimes,
+  loadLearningModeResponseTimes,
+  saveLearningModeLevelCompletion,
+  loadLearningModeLevelCompletion,
+  isLearningModeLevelCompleted,
+  loadLearningModeProgress,
+  saveLearningModeProgress,
+  LEARNING_MODE_STORAGE_KEYS
 } from "./utils/LocalStorageUtils";
 import StarsBackground from "./components/StarsBackground";
 import MainMenu from "./components/MainMenu";
 import GameScreen from "./components/GameScreen";
 import MetricsView from "./components/MetricsView";
+import LevelCompletionConfetti from "./components/LevelCompletionConfetti";
 import {
   generateQuestion,
   generateMiniGameQuestion,
   getDifficultyTimeLimit,
+  generateLearningModeQuestion
 } from "./utils/QuestionGenerator";
-import { getAverageResponseTime, getPlayerRank } from "./utils/MetricsUtils";
+import { getAverageResponseTime, getPlayerRank, getLearningModeMasteryData } from "./utils/MetricsUtils";
+import { isLearningModeEnabled, getLearningLevels } from "./utils/LearningModeConfig";
 
 const CosmicMultiplicationQuest = () => {
   // Initialize or get profile ID
@@ -85,6 +96,17 @@ const CosmicMultiplicationQuest = () => {
     loadFromLocalStorage("cosmicQuest_attemptCounts", {})
   ); // Track number of attempts for each question
   const [showPerformanceView, setShowPerformanceView] = useState(false); // Toggle for performance view
+  
+  // Learning mode state
+  const [isLearningMode, setIsLearningMode] = useState(false);
+  const [currentLearningLevel, setCurrentLearningLevel] = useState(null);
+  const [learningModeResponseTimes, setLearningModeResponseTimes] = useState(
+    loadFromLocalStorage(LEARNING_MODE_STORAGE_KEYS.RESPONSE_TIMES, {})
+  ); // Track learning mode response times
+  const [showLevelCompletion, setShowLevelCompletion] = useState(false);
+  const [completedLevel, setCompletedLevel] = useState(null);
+  const [nextLevel, setNextLevel] = useState(null);
+  const [levelCompletionRank, setLevelCompletionRank] = useState(null);
 
   // Save states to localStorage when they change and update URL
   useEffect(() => {
@@ -162,6 +184,11 @@ const CosmicMultiplicationQuest = () => {
   useEffect(() => {
     saveToLocalStorage("cosmicQuest_attemptCounts", attemptCounts);
   }, [attemptCounts]);
+  
+  // Save learning mode response times when they change
+  useEffect(() => {
+    saveToLocalStorage(LEARNING_MODE_STORAGE_KEYS.RESPONSE_TIMES, learningModeResponseTimes);
+  }, [learningModeResponseTimes]);
 
   // Update last played time whenever the game is started or resumed
   useEffect(() => {
@@ -252,20 +279,145 @@ const CosmicMultiplicationQuest = () => {
     setMiniGameFeedback("");
 
     const planet = planets.find((p) => p.id === currentPlanet);
+    
+    // Check if we're in learning mode
+    if (isLearningMode && currentLearningLevel) {
+      const result = generateLearningModeQuestion(
+        { ...planet, isLearningMode: true },
+        previousMultiplier,
+        attemptCounts,
+        responseTimes,
+        currentLearningLevel.range
+      );
+      
+      setPreviousMultiplier(result.newMultiplier);
+      setCurrentQuestion(result.question);
+      setAnswerOptions(result.options);
+      setTimeRemaining(null); // No time limit in learning mode
+      setFeedback(""); // Clear any existing feedback
+      setTimerRunning(false); // No timer in learning mode
+    } else {
+      // Regular mode
+      const result = generateQuestion(
+        planet,
+        previousMultiplier,
+        attemptCounts,
+        responseTimes
+      );
 
+      setPreviousMultiplier(result.newMultiplier);
+      setCurrentQuestion(result.question);
+      setAnswerOptions(result.options);
+      setTimeRemaining(result.question.timeLimit);
+      setFeedback(""); // Clear any existing feedback
+      setTimerRunning(true);
+    }
+  };
+  
+  // Find the next learning level
+  const findNextLearningLevel = (currentLevelId) => {
+    const allLevels = getLearningLevels();
+    const currentIndex = allLevels.findIndex(level => level.id === currentLevelId);
+    
+    // Return the next level or null if at the end
+    return currentIndex < allLevels.length - 1 ? allLevels[currentIndex + 1] : null;
+  };
+  
+  // Change to a specific learning level
+  const changeLearningLevel = (level) => {
+    setCurrentLearningLevel(level);
+    
+    // Reset mini-game state
+    setMiniGameActive(false);
+    setMiniGameFeedback("");
+    
+    const planet = planets.find((p) => p.id === currentPlanet);
+    
+    // Generate first question for the new level
+    const result = generateLearningModeQuestion(
+      { ...planet, isLearningMode: true },
+      null, // No previous multiplier
+      attemptCounts,
+      responseTimes,
+      level.range
+    );
+    
+    setPreviousMultiplier(result.newMultiplier);
+    setCurrentQuestion(result.question);
+    setAnswerOptions(result.options);
+    setTimeRemaining(null); // No time limit in learning mode
+    setFeedback(""); // Clear any existing feedback
+    setTimerRunning(false); // No timer in learning mode
+  };
+  
+  // Exit learning mode and return to normal game mode
+  const exitLearningMode = () => {
+    setIsLearningMode(false);
+    setCurrentLearningLevel(null);
+    
+    // Reset mini-game state
+    setMiniGameActive(false);
+    setMiniGameFeedback("");
+    
+    const planet = planets.find((p) => p.id === currentPlanet);
+    
+    // Generate first question for normal mode
     const result = generateQuestion(
       planet,
-      previousMultiplier,
+      null, // No previous multiplier
       attemptCounts,
       responseTimes
     );
-
+    
     setPreviousMultiplier(result.newMultiplier);
     setCurrentQuestion(result.question);
     setAnswerOptions(result.options);
     setTimeRemaining(result.question.timeLimit);
     setFeedback(""); // Clear any existing feedback
-    setTimerRunning(true);
+    setTimerRunning(true); // Start timer for normal mode
+  };
+  
+  // Handle level completion and progression
+  const handleLevelCompletion = () => {
+    // If there's a next level, move to it
+    if (nextLevel) {
+      changeLearningLevel(nextLevel);
+    } else {
+      // If all levels are completed, exit to normal mode
+      exitLearningMode();
+    }
+    
+    // Hide the completion modal
+    setShowLevelCompletion(false);
+    setCompletedLevel(null);
+    setNextLevel(null);
+    setLevelCompletionRank(null);
+  };
+  
+  // Start learning mode with selected level
+  const startLearningMode = (planet, level) => {
+    setIsLearningMode(true);
+    setCurrentLearningLevel(level);
+    
+    // Reset mini-game state
+    setMiniGameActive(false);
+    setMiniGameFeedback("");
+    
+    // Generate first question
+    const result = generateLearningModeQuestion(
+      { ...planet, isLearningMode: true },
+      null, // No previous multiplier
+      attemptCounts,
+      responseTimes,
+      level.range
+    );
+    
+    setPreviousMultiplier(result.newMultiplier);
+    setCurrentQuestion(result.question);
+    setAnswerOptions(result.options);
+    setTimeRemaining(null); // No time limit in learning mode
+    setFeedback(""); // Clear any existing feedback
+    setTimerRunning(false); // No timer in learning mode
   };
 
   // Start the game
@@ -290,10 +442,18 @@ const CosmicMultiplicationQuest = () => {
     // Track answer for metrics
     const questionKey = `${currentQuestion.multiplicand}x${currentQuestion.multiplier}`;
     const planet = planets.find((p) => p.id === currentPlanet);
-
-    // Calculate response time in seconds
-    const fullTimeLimit = getDifficultyTimeLimit(planet.table);
-    const secondsUsed = fullTimeLimit - timeRemaining;
+    
+    // Calculate response time differently based on mode
+    let secondsUsed;
+    if (isLearningMode) {
+      // In learning mode, track time since question was displayed
+      // For simplicity, we'll use a placeholder value since there's no timer
+      secondsUsed = 3; // Default value for tracking purpose
+    } else {
+      // Regular mode - calculate from timer
+      const fullTimeLimit = getDifficultyTimeLimit(planet.table);
+      secondsUsed = fullTimeLimit - timeRemaining;
+    }
 
     // Update attempt counts for this question
     setAttemptCounts((prev) => ({
@@ -301,71 +461,146 @@ const CosmicMultiplicationQuest = () => {
       [questionKey]: (prev[questionKey] || 0) + 1,
     }));
 
-    // Track response time (only for correct answers)
+    // Track response time (only for correct answers) - different for each mode
     if (isCorrect) {
-      // Store response time with the table number as the key prefix
-      const tableKey = `table_${currentQuestion.multiplicand}`;
-      setResponseTimes((prev) => ({
-        ...prev,
-        [tableKey]: {
-          ...(prev[tableKey] || {}),
-          [questionKey]: [
-            ...(prev[tableKey]?.[questionKey] || []),
-            secondsUsed,
-          ],
-        },
-      }));
-    }
-
-    if (isCorrect) {
-      // Calculate points based on table number
-      const difficultyMultiplier = Math.min(
-        Math.max(Math.floor(planet.table / 4), 1),
-        5
-      );
-
-      // Calculate base points
-      const timeBonus = Math.max(1, Math.ceil(timeRemaining / 2));
-
-      // Award significant bonus for very fast answers
-      let speedMultiplier = 1;
-      let speedBonusText = "";
-
-      const fullTimeLimit = getDifficultyTimeLimit(planet.table);
-      const secondsUsed = fullTimeLimit - timeRemaining;
-
-      if (timeRemaining >= fullTimeLimit * 0.8) {
-        // Super fast answer (80%+ of time remaining)
-        speedMultiplier = 2.0;
-        speedBonusText = `SUPER FAST! ⚡⚡ (${secondsUsed.toFixed(
-          2
-        )}s - 2× points)`;
-      } else if (timeRemaining >= fullTimeLimit * 0.6) {
-        // Fast answer (60%+ of time remaining)
-        speedMultiplier = 1.5;
-        speedBonusText = `FAST! ⚡ (${secondsUsed.toFixed(2)}s - 1.5× points)`;
+      if (isLearningMode && currentLearningLevel) {
+        // Learning mode - store in learning mode response times only
+        const planetKey = `planet_${currentPlanet}`;
+        const levelKey = `level_${currentLearningLevel.id}`;
+        
+        // Update learning mode response times
+        setLearningModeResponseTimes(prev => {
+          // Create nested structure if it doesn't exist
+          let updatedData = { ...prev };
+          
+          if (!updatedData[planetKey]) {
+            updatedData[planetKey] = {};
+          }
+          
+          if (!updatedData[planetKey][levelKey]) {
+            updatedData[planetKey][levelKey] = {};
+          }
+          
+          if (!updatedData[planetKey][levelKey][questionKey]) {
+            updatedData[planetKey][levelKey][questionKey] = [];
+          }
+          
+          // Add the new response time
+          updatedData[planetKey][levelKey][questionKey] = [
+            ...updatedData[planetKey][levelKey][questionKey],
+            secondsUsed
+          ];
+          
+          return updatedData;
+        });
+        
+        // Check if level is completed
+        const levelData = getLearningModeMasteryData(
+          planet, 
+          currentLearningLevel.id,
+          correctAnswers,
+          wrongAnswers,
+          learningModeResponseTimes
+        );
+        
+        // Auto-save completion status - consider complete if rank is Pro or better
+        if (levelData.playerRank && ['Pro', 'Hacker', 'God'].includes(levelData.playerRank.rank)) {
+          saveLearningModeLevelCompletion(
+            currentPlanet,
+            currentLearningLevel.id,
+            { 
+              completed: true, 
+              playerRank: levelData.playerRank
+            }
+          );
+        }
+      } else {
+        // Regular mode - store in standard response times
+        const tableKey = `table_${currentQuestion.multiplicand}`;
+        setResponseTimes((prev) => ({
+          ...prev,
+          [tableKey]: {
+            ...(prev[tableKey] || {}),
+            [questionKey]: [
+              ...(prev[tableKey]?.[questionKey] || []),
+              secondsUsed,
+            ],
+          },
+        }));
       }
-
-      // Calculate final points and round to integer
-      const pointsEarned = Math.round(
-        10 * difficultyMultiplier * timeBonus * speedBoost * speedMultiplier
-      );
-
-      setScore((prev) => prev + pointsEarned);
-
-      // Build feedback message with speed bonus if applicable
-      let feedbackText = `Correct! +${pointsEarned} points`;
-      if (speedBonusText) {
-        feedbackText = `${feedbackText}\n${speedBonusText}`;
-      }
-
-      setFeedback(feedbackText);
-
-      // Track correct answer
+      
+      // Important: We always track correct answers for both modes
+      // This ensures the global stats are maintained
       setCorrectAnswers((prev) => ({
         ...prev,
         [questionKey]: (prev[questionKey] || 0) + 1,
       }));
+    } else {
+      // For incorrect answers
+      setWrongAnswers((prev) => ({
+        ...prev,
+        [questionKey]: (prev[questionKey] || 0) + 1,
+      }));
+    }
+
+    if (isCorrect) {
+      // Different point calculation based on mode
+      let pointsEarned = 0;
+      let feedbackText = "";
+      
+      if (isLearningMode) {
+        // Learning mode - simpler point system without time pressure
+        pointsEarned = 10; // Fixed points for learning mode
+        feedbackText = `Correct! +${pointsEarned} points`;
+        
+        // If this is an actual timed response, add info about the time
+        if (secondsUsed) {
+          feedbackText = `${feedbackText}\nTime: ${secondsUsed.toFixed(1)}s`;
+        }
+      } else {
+        // Regular mode - full point system
+        // Calculate points based on table number
+        const difficultyMultiplier = Math.min(
+          Math.max(Math.floor(planet.table / 4), 1),
+          5
+        );
+
+        // Calculate base points
+        const timeBonus = Math.max(1, Math.ceil(timeRemaining / 2));
+
+        // Award significant bonus for very fast answers
+        let speedMultiplier = 1;
+        let speedBonusText = "";
+
+        const fullTimeLimit = getDifficultyTimeLimit(planet.table);
+        const secondsUsed = fullTimeLimit - timeRemaining;
+
+        if (timeRemaining >= fullTimeLimit * 0.8) {
+          // Super fast answer (80%+ of time remaining)
+          speedMultiplier = 2.0;
+          speedBonusText = `SUPER FAST! ⚡⚡ (${secondsUsed.toFixed(
+            2
+          )}s - 2× points)`;
+        } else if (timeRemaining >= fullTimeLimit * 0.6) {
+          // Fast answer (60%+ of time remaining)
+          speedMultiplier = 1.5;
+          speedBonusText = `FAST! ⚡ (${secondsUsed.toFixed(2)}s - 1.5× points)`;
+        }
+
+        // Calculate final points and round to integer
+        pointsEarned = Math.round(
+          10 * difficultyMultiplier * timeBonus * speedBoost * speedMultiplier
+        );
+
+        // Build feedback message with speed bonus if applicable
+        feedbackText = `Correct! +${pointsEarned} points`;
+        if (speedBonusText) {
+          feedbackText = `${feedbackText}\n${speedBonusText}`;
+        }
+      }
+      
+      setScore((prev) => prev + pointsEarned);
+      setFeedback(feedbackText);
 
       // Track fast answers for the current planet (answers where time remaining is high)
       // With 15 second timer for all questions, consider answers with 10+ seconds remaining as fast
@@ -449,8 +684,8 @@ const CosmicMultiplicationQuest = () => {
         setFeedback((prev) => `${prev}\n🎉 New planet unlocked! 🎉`);
       }
 
-      // Random chance to trigger mini-game
-      if (Math.random() < 0.2) {
+      // Random chance to trigger mini-game - only in normal mode, not learning mode
+      if (!isLearningMode && Math.random() < 0.2) {
         // Show feedback first, then trigger mini-game after a delay
         setTimeout(() => {
           triggerMiniGame();
@@ -460,6 +695,46 @@ const CosmicMultiplicationQuest = () => {
         setTimeout(() => {
           generateNewQuestion();
         }, 1500);
+      }
+      
+      // If in learning mode, check if level is completed after correct answer
+      if (isLearningMode && currentLearningLevel) {
+        const levelData = getLearningModeMasteryData(
+          planet, 
+          currentLearningLevel.id,
+          correctAnswers,
+          wrongAnswers,
+          learningModeResponseTimes
+        );
+        
+        // If player achieved Pro rank or higher, trigger level completion
+        if (levelData.playerRank && 
+            ['Pro', 'Hacker', 'God'].includes(levelData.playerRank.rank) && 
+            !isLearningModeLevelCompleted(currentPlanet, currentLearningLevel.id)) {
+          
+          // Save completion status
+          saveLearningModeLevelCompletion(
+            currentPlanet,
+            currentLearningLevel.id,
+            { 
+              completed: true, 
+              playerRank: levelData.playerRank
+            }
+          );
+          
+          // Find the next level for progression
+          const nextLevelData = findNextLearningLevel(currentLearningLevel.id);
+          
+          // Set up the completion celebration
+          setCompletedLevel(currentLearningLevel);
+          setNextLevel(nextLevelData);
+          setLevelCompletionRank(levelData.playerRank);
+          
+          // Show the completion celebration after a short delay
+          setTimeout(() => {
+            setShowLevelCompletion(true);
+          }, 1000);
+        }
       }
 
       // Increase speed boost for consecutive correct answers
@@ -605,6 +880,10 @@ const CosmicMultiplicationQuest = () => {
     setGameState("game");
     setScore(0);
     setLives(3);
+    
+    // Exit learning mode when starting a new planet game
+    setIsLearningMode(false);
+    setCurrentLearningLevel(null);
 
     // Generate a question for this specific planet
     const result = generateQuestion(
@@ -645,6 +924,9 @@ const CosmicMultiplicationQuest = () => {
       setResponseTimes({});
       setAttemptCounts({});
       setShowPerformanceView(false);
+      setIsLearningMode(false);
+      setCurrentLearningLevel(null);
+      setLearningModeResponseTimes({});
 
       // Clear specific items from localStorage
       const keysToRemove = [
@@ -662,6 +944,10 @@ const CosmicMultiplicationQuest = () => {
         "cosmicQuest_lastPlayed",
         "cosmicQuest_responseTimes",
         "cosmicQuest_attemptCounts",
+        // Learning mode keys
+        LEARNING_MODE_STORAGE_KEYS.PROGRESS,
+        LEARNING_MODE_STORAGE_KEYS.LEVEL_COMPLETION,
+        LEARNING_MODE_STORAGE_KEYS.RESPONSE_TIMES
       ];
 
       keysToRemove.forEach((key) => {
@@ -719,6 +1005,9 @@ const CosmicMultiplicationQuest = () => {
         setResponseTimes({});
         setAttemptCounts({});
         setShowPerformanceView(false);
+        setIsLearningMode(false);
+        setCurrentLearningLevel(null);
+        setLearningModeResponseTimes({});
 
         // Show confirmation and reload the page to ensure a fresh start
         alert("New profile created successfully! Starting fresh...");
@@ -732,6 +1021,11 @@ const CosmicMultiplicationQuest = () => {
 
   // Timer effect
   useEffect(() => {
+    // Skip timer in learning mode
+    if (isLearningMode) {
+      return;
+    }
+    
     let timer;
     if (timerRunning && timeRemaining > 0) {
       timer = setTimeout(() => {
@@ -757,7 +1051,7 @@ const CosmicMultiplicationQuest = () => {
     }
 
     return () => clearTimeout(timer);
-  }, [timerRunning, timeRemaining, lives, currentQuestion]);
+  }, [timerRunning, timeRemaining, lives, currentQuestion, isLearningMode]);
 
   return (
     <div className="min-h-screen bg-gray-900 bg-[url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1471&q=80')] bg-cover bg-center bg-blend-overlay py-8 px-4 relative overflow-hidden">
@@ -777,27 +1071,44 @@ const CosmicMultiplicationQuest = () => {
         )}
 
         {gameState === "game" && (
-          <GameScreen
-            planets={planets}
-            currentPlanet={currentPlanet}
-            score={score}
-            lives={lives}
-            speedBoost={speedBoost}
-            miniGameActive={miniGameActive}
-            miniGameType={miniGameType}
-            currentQuestion={currentQuestion}
-            timeRemaining={timeRemaining}
-            answerOptions={answerOptions}
-            feedback={feedback}
-            miniGameFeedback={miniGameFeedback}
-            submitAnswer={submitAnswer}
-            completeMiniGame={completeMiniGame}
-            setGameState={setGameState}
-            responseTimes={responseTimes}
-            attemptCounts={attemptCounts}
-            correctAnswers={correctAnswers}
-            wrongAnswers={wrongAnswers}
-          />
+          <>
+            <GameScreen
+              planets={planets}
+              currentPlanet={currentPlanet}
+              score={score}
+              lives={lives}
+              speedBoost={speedBoost}
+              miniGameActive={miniGameActive}
+              miniGameType={miniGameType}
+              currentQuestion={currentQuestion}
+              timeRemaining={timeRemaining}
+              answerOptions={answerOptions}
+              feedback={feedback}
+              miniGameFeedback={miniGameFeedback}
+              submitAnswer={submitAnswer}
+              completeMiniGame={completeMiniGame}
+              setGameState={setGameState}
+              responseTimes={responseTimes}
+              attemptCounts={attemptCounts}
+              correctAnswers={correctAnswers}
+              wrongAnswers={wrongAnswers}
+              startLearningMode={startLearningMode}
+              isLearningMode={isLearningMode}
+              currentLearningLevel={currentLearningLevel}
+              learningModeResponseTimes={learningModeResponseTimes}
+              changeLearningLevel={changeLearningLevel}
+              exitLearningMode={exitLearningMode}
+            />
+            
+            {/* Level completion celebration */}
+            <LevelCompletionConfetti 
+              show={showLevelCompletion}
+              level={completedLevel}
+              rank={levelCompletionRank}
+              nextLevel={nextLevel}
+              onComplete={handleLevelCompletion}
+            />
+          </>
         )}
 
         {gameState === "metrics" && (

@@ -1,8 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import GameHeader from "./GameHeader";
 import GameQuestion from "./GameQuestion";
 import MiniGame from "./MiniGame";
 import HeatMap from "./HeatMap";
+import LearningModeSelector from "./LearningModeSelector";
+import LearningModeMetrics from "./LearningModeMetrics";
+import { isLearningModeEnabled } from "../utils/LearningModeConfig";
 
 const GameScreen = ({
   planets,
@@ -23,11 +26,38 @@ const GameScreen = ({
   responseTimes,
   attemptCounts,
   correctAnswers,
-  wrongAnswers
+  wrongAnswers,
+  startLearningMode,
+  isLearningMode,
+  currentLearningLevel,
+  learningModeResponseTimes,
+  changeLearningLevel,
+  exitLearningMode
 }) => {
+  // Local state for learning mode selector
+  const [showLearningModeSelector, setShowLearningModeSelector] = useState(false);
+  
   // Get current planet details
   const planet = planets.find(p => p.id === currentPlanet);
   const tableNumber = planet ? planet.table : 0;
+  
+  // Handle opening the learning mode selector
+  const openLearningModeSelector = () => {
+    setShowLearningModeSelector(true);
+  };
+  
+  // Handle selecting a learning level
+  const handleSelectLevel = (level) => {
+    setShowLearningModeSelector(false);
+    if (startLearningMode) {
+      startLearningMode(planet, level);
+    }
+  };
+  
+  // Cancel learning mode selection
+  const handleCancelLearningMode = () => {
+    setShowLearningModeSelector(false);
+  };
   
   return (
     <div className="max-w-6xl mx-auto">
@@ -62,26 +92,76 @@ const GameScreen = ({
         </div>
         
         <div className="md:w-4/12">
-          {/* Show HeatMap during both regular game and mini-games */}
-          <HeatMap 
-            tableNumber={tableNumber}
-            responseTimes={responseTimes}
-            attemptCounts={attemptCounts}
-            correctAnswers={correctAnswers}
-            wrongAnswers={wrongAnswers}
-          />
+          {isLearningMode && currentLearningLevel ? (
+            <>
+              {/* Show Learning Mode Metrics in learning mode */}
+              <LearningModeMetrics 
+                planet={planet}
+                currentLearningLevel={currentLearningLevel}
+                learningModeResponseTimes={learningModeResponseTimes}
+                onChangeLevel={() => setShowLearningModeSelector(true)}
+                onExitLearningMode={exitLearningMode}
+              />
+              
+              {/* Show smaller version of HeatMap filtered to current range */}
+              <div className="mt-4">
+                <HeatMap 
+                  tableNumber={tableNumber}
+                  responseTimes={responseTimes}
+                  attemptCounts={attemptCounts}
+                  correctAnswers={correctAnswers}
+                  wrongAnswers={wrongAnswers}
+                  isLearningMode={true}
+                  levelRange={currentLearningLevel.range}
+                  learningModeResponseTimes={learningModeResponseTimes}
+                  planetId={currentPlanet}
+                  currentLearningLevel={currentLearningLevel}
+                />
+              </div>
+            </>
+          ) : (
+            /* Show regular HeatMap during normal mode */
+            <HeatMap 
+              tableNumber={tableNumber}
+              responseTimes={responseTimes}
+              attemptCounts={attemptCounts}
+              correctAnswers={correctAnswers}
+              wrongAnswers={wrongAnswers}
+            />
+          )}
         </div>
       </div>
       
       <div className="mt-6 flex justify-between">
-        <button
-          onClick={() => setGameState("menu")}
-          className="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-5 rounded-full shadow-lg flex items-center"
-          style={{ boxShadow: "0 0 10px rgba(75, 85, 99, 0.5)" }}
-        >
-          <span className="mr-2">🏠</span>
-          Return to Base
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={() => setGameState("menu")}
+            className="bg-gray-700 hover:bg-gray-800 text-white font-bold py-2 px-5 rounded-full shadow-lg flex items-center"
+            style={{ boxShadow: "0 0 10px rgba(75, 85, 99, 0.5)" }}
+          >
+            <span className="mr-2">🏠</span>
+            Return to Base
+          </button>
+          
+          {isLearningModeEnabled() && !isLearningMode && (
+            <button
+              onClick={openLearningModeSelector}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-5 rounded-full shadow-lg flex items-center"
+              style={{ boxShadow: "0 0 10px rgba(5, 150, 105, 0.5)" }}
+            >
+              <span className="mr-2">📚</span>
+              Learning Mode
+            </button>
+          )}
+          
+          {isLearningMode && currentLearningLevel && (
+            <div className="bg-emerald-800 text-white font-bold py-2 px-5 rounded-full shadow-lg flex items-center">
+              <span className="mr-2">📚</span>
+              Learning: {currentLearningLevel.name}
+            </div>
+          )}
+        </div>
+        
         <button
           onClick={() => setGameState("metrics")}
           className="bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 px-5 rounded-full shadow-lg flex items-center"
@@ -91,6 +171,17 @@ const GameScreen = ({
           View Galactic Map
         </button>
       </div>
+      
+      {/* Learning Mode Selector Modal */}
+      {showLearningModeSelector && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <LearningModeSelector 
+            planet={planet}
+            onSelectLevel={handleSelectLevel}
+            onCancel={handleCancelLearningMode}
+          />
+        </div>
+      )}
     </div>
   );
 };

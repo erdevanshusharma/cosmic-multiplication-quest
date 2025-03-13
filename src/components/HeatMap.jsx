@@ -6,15 +6,37 @@ const HeatMap = ({
   attemptCounts,
   correctAnswers,
   wrongAnswers,
+  isLearningMode = false,
+  levelRange = null,
+  learningModeResponseTimes = null,
+  planetId = null,
+  currentLearningLevel = null,
 }) => {
-  const tableKey = `table_${tableNumber}`;
-  const tableData = responseTimes?.[tableKey] || {};
+  // Different data source based on mode
+  let tableData = {};
+  
+  if (isLearningMode && learningModeResponseTimes && planetId && currentLearningLevel) {
+    // In learning mode, use learning mode data
+    const planetKey = `planet_${planetId}`;
+    const levelKey = `level_${currentLearningLevel.id}`;
+    tableData = learningModeResponseTimes[planetKey]?.[levelKey] || {};
+  } else {
+    // In regular mode, use regular data
+    const tableKey = `table_${tableNumber}`;
+    tableData = responseTimes?.[tableKey] || {};
+  }
 
-  // Create a matrix for all possible multiplications (1-12)
+  // Create a matrix for multiplications (either all 1-12 or filtered by level range)
   const gridData = [];
+  
+  // Determine range of multipliers to display
+  const minMultiplier = isLearningMode && levelRange ? levelRange[0] : 1;
+  const maxMultiplier = isLearningMode && levelRange ? levelRange[1] : 12;
 
-  for (let multiplier = 1; multiplier <= 12; multiplier++) {
+  for (let multiplier = minMultiplier; multiplier <= maxMultiplier; multiplier++) {
     const questionKey = `${tableNumber}x${multiplier}`;
+    
+    // Get response times - either from learning mode or regular mode
     const times = tableData[questionKey] || [];
 
     // Calculate metrics
@@ -23,9 +45,20 @@ const HeatMap = ({
         ? times.reduce((sum, t) => sum + t, 0) / times.length
         : null;
 
-    const attempts = attemptCounts?.[questionKey] || 0;
-    const correct = correctAnswers?.[questionKey] || 0;
-    const wrong = wrongAnswers?.[questionKey] || 0;
+    // For learning mode, we calculate stats directly from the response times data
+    let attempts, correct, wrong;
+    
+    if (isLearningMode) {
+      // In learning mode, we only track correct answers in learningModeResponseTimes
+      attempts = times.length;
+      correct = times.length; // All tracked responses in learning mode are correct answers
+      wrong = 0; // We don't track wrong answers in learning mode currently
+    } else {
+      // Regular mode - use the standard metrics
+      attempts = attemptCounts?.[questionKey] || 0;
+      correct = correctAnswers?.[questionKey] || 0;
+      wrong = wrongAnswers?.[questionKey] || 0;
+    }
 
     // Calculate accuracy rate
     const accuracyRate =
@@ -69,10 +102,13 @@ const HeatMap = ({
   return (
     <div className="bg-gray-800 bg-opacity-90 rounded-lg p-3 shadow-lg">
       <h3 className="text-white text-sm font-bold mb-2">
-        {tableNumber}'s Table Performance
+        {isLearningMode && levelRange 
+          ? `${tableNumber}'s Table (×${minMultiplier}-${maxMultiplier})`
+          : `${tableNumber}'s Table Performance`
+        }
       </h3>
 
-      <div className="grid grid-cols-4 gap-1">
+      <div className={`grid ${isLearningMode ? 'grid-cols-3' : 'grid-cols-4'} gap-1`}>
         {gridData.map((cell) => (
           <div
             key={cell.multiplier}

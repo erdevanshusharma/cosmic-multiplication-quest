@@ -14,23 +14,29 @@ const GameQuestion = ({
           <h2 className="text-2xl text-white font-bold">
             <span className="text-blue-400">Space</span> Problem:
           </h2>
-          <div
-            className={`px-3 py-1 rounded-full ${
-              timeRemaining < 5
-                ? "bg-red-500 animate-pulse"
-                : timeRemaining < 10
-                ? "bg-yellow-500"
-                : "bg-blue-500"
-            }`}
-            style={{
-              boxShadow:
+          {timeRemaining !== null ? (
+            <div
+              className={`px-3 py-1 rounded-full ${
                 timeRemaining < 5
-                  ? "0 0 10px rgba(239, 68, 68, 0.7)"
-                  : "none",
-            }}
-          >
-            Time: {timeRemaining}s
-          </div>
+                  ? "bg-red-500 animate-pulse"
+                  : timeRemaining < 10
+                  ? "bg-yellow-500"
+                  : "bg-blue-500"
+              }`}
+              style={{
+                boxShadow:
+                  timeRemaining < 5
+                    ? "0 0 10px rgba(239, 68, 68, 0.7)"
+                    : "none",
+              }}
+            >
+              Time: {timeRemaining}s
+            </div>
+          ) : (
+            <div className="px-3 py-1 rounded-full bg-emerald-600">
+              Learning Mode
+            </div>
+          )}
         </div>
         <div className="relative">
           <div
