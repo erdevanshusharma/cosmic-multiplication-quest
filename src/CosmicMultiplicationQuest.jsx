@@ -4,13 +4,8 @@ import { planets } from "./Constants";
 import {
   saveToLocalStorage,
   loadFromLocalStorage,
-  saveLearningModeResponseTimes,
-  loadLearningModeResponseTimes,
   saveLearningModeLevelCompletion,
-  loadLearningModeLevelCompletion,
   isLearningModeLevelCompleted,
-  loadLearningModeProgress,
-  saveLearningModeProgress,
   LEARNING_MODE_STORAGE_KEYS,
 } from "./utils/LocalStorageUtils";
 import StarsBackground from "./components/StarsBackground";
@@ -29,25 +24,9 @@ import {
   getPlayerRank,
   getLearningModeMasteryData,
 } from "./utils/MetricsUtils";
-import {
-  isLearningModeEnabled,
-  getLearningLevels,
-} from "./utils/LearningModeConfig";
+import { getLearningLevels } from "./utils/LearningModeConfig";
 
 const CosmicMultiplicationQuest = () => {
-  // Initialize or get profile ID
-  const [profileId, setProfileId] = useState(() => {
-    const savedProfileId = localStorage.getItem("cosmicQuest_profileId");
-    if (savedProfileId) {
-      return savedProfileId;
-    } else {
-      // Create a new profile ID if one doesn't exist
-      const newProfileId = `profile_${Date.now()}`;
-      localStorage.setItem("cosmicQuest_profileId", newProfileId);
-      return newProfileId;
-    }
-  });
-
   // Game states - initialize from localStorage with defaults
   const [gameState, setGameState] = useState(
     loadFromLocalStorage("cosmicQuest_gameState", "menu")
@@ -534,16 +513,22 @@ const CosmicMultiplicationQuest = () => {
       } else {
         // Regular mode - store in standard response times
         const tableKey = `table_${currentQuestion.multiplicand}`;
-        setResponseTimes((prev) => ({
-          ...prev,
-          [tableKey]: {
-            ...(prev[tableKey] || {}),
-            [questionKey]: [
-              ...(prev[tableKey]?.[questionKey] || []),
-              secondsUsed,
-            ],
-          },
-        }));
+        setResponseTimes((prev) => {
+          // Destructure 'table_12' out and collect the rest of the properties
+          const { table_12, ...updatedPrev } = prev;
+
+          // Return the new state object
+          return {
+            ...updatedPrev,
+            [tableKey]: {
+              ...(updatedPrev[tableKey] || {}),
+              [questionKey]: [
+                ...(updatedPrev[tableKey]?.[questionKey] || []),
+                secondsUsed,
+              ],
+            },
+          };
+        });
       }
 
       // Important: We always track correct answers for both modes
