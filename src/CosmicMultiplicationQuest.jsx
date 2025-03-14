@@ -598,7 +598,6 @@ const CosmicMultiplicationQuest = () => {
           speedBonusText = `SUPER FAST! ⚡⚡ (${secondsUsed.toFixed(
             2
           )}s - 2× points)`;
-          debugger;
         } else if (timeRemaining >= fullTimeLimit * 0.6) {
           // Fast answer (60%+ of time remaining)
           speedMultiplier = 1.5;

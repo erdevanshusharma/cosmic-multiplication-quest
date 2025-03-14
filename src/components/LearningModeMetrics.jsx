@@ -52,7 +52,9 @@ const LearningModeMetrics = ({
 
   // Check if player has achieved Pro rank or better
   const hasAchievedProRank =
-    playerRank && ["Pro", "Hacker", "God"].includes(playerRank.rank);
+    completionPercentage === 100 &&
+    playerRank &&
+    ["Pro", "Hacker", "God"].includes(playerRank.rank);
 
   return (
     <div className="bg-gray-800 rounded-lg p-4 mt-4 shadow-lg">
