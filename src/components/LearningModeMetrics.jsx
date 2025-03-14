@@ -38,7 +38,7 @@ const LearningModeMetrics = ({
   // Calculate completion percentage based on the range covered
   const completionPercentage = Math.min(
     100,
-    Math.round((totalQuestions / totalQuestionsInRange) * 100)
+    Math.round((totalAnswers / (totalQuestionsInRange * 5)) * 100)
   );
 
   const avgResponseTime = totalAnswers > 0 ? totalTime / totalAnswers : null;
@@ -52,10 +52,11 @@ const LearningModeMetrics = ({
 
   // Check if player has achieved Pro rank or better
   const hasAchievedProRank =
+    totalQuestions === totalQuestionsInRange &&
+    totalAnswers >= totalQuestionsInRange * 5 &&
     completionPercentage === 100 &&
     playerRank &&
     ["Pro", "Hacker", "God"].includes(playerRank.rank);
-
   return (
     <div className="bg-gray-800 rounded-lg p-4 mt-4 shadow-lg">
       <div className="flex justify-between items-center mb-3">

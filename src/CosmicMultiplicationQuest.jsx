@@ -649,7 +649,12 @@ const CosmicMultiplicationQuest = () => {
         playerRank && ["Pro", "Hacker", "God"].includes(playerRank.rank);
 
       // Check for planet unlock conditions
-      if (currentMastery >= 85 && fastAnswersCount >= 10 && hasRequiredRank) {
+      if (
+        currentMastery >= 85 &&
+        fastAnswersCount >= 10 &&
+        hasRequiredRank &&
+        !isLearningMode
+      ) {
         // Find the next planet ID
         const currentPlanetIndex = planets.findIndex(
           (p) => p.id === currentPlanet
