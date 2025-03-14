@@ -14,8 +14,13 @@ const HeatMap = ({
 }) => {
   // Different data source based on mode
   let tableData = {};
-  
-  if (isLearningMode && learningModeResponseTimes && planetId && currentLearningLevel) {
+
+  if (
+    isLearningMode &&
+    learningModeResponseTimes &&
+    planetId &&
+    currentLearningLevel
+  ) {
     // In learning mode, use learning mode data
     const planetKey = `planet_${planetId}`;
     const levelKey = `level_${currentLearningLevel.id}`;
@@ -28,14 +33,18 @@ const HeatMap = ({
 
   // Create a matrix for multiplications (either all 1-12 or filtered by level range)
   const gridData = [];
-  
+
   // Determine range of multipliers to display
   const minMultiplier = isLearningMode && levelRange ? levelRange[0] : 1;
   const maxMultiplier = isLearningMode && levelRange ? levelRange[1] : 12;
 
-  for (let multiplier = minMultiplier; multiplier <= maxMultiplier; multiplier++) {
+  for (
+    let multiplier = minMultiplier;
+    multiplier <= maxMultiplier;
+    multiplier++
+  ) {
     const questionKey = `${tableNumber}x${multiplier}`;
-    
+
     // Get response times - either from learning mode or regular mode
     const times = tableData[questionKey] || [];
 
@@ -47,7 +56,7 @@ const HeatMap = ({
 
     // For learning mode, we calculate stats directly from the response times data
     let attempts, correct, wrong;
-    
+
     if (isLearningMode) {
       // In learning mode, we only track correct answers in learningModeResponseTimes
       attempts = times.length;
@@ -71,19 +80,19 @@ const HeatMap = ({
       cellColor = "bg-gray-700"; // Not attempted
       textColor = "text-white";
     } else if (avgTime <= 1) {
-      cellColor = "bg-slate-50"; // God (amber-50 with better contrast)
+      cellColor = "bg-white"; // God (amber-50 with better contrast)
       textColor = "text-black"; // Black text on light background
     } else if (avgTime <= 3) {
-      cellColor = "bg-slate-400"; // Hacker (rose-200 with better contrast)
+      cellColor = "bg-gray-300"; // Hacker (rose-200 with better contrast)
       textColor = "text-black"; // Black text on light background
     } else if (avgTime <= 5) {
-      cellColor = "bg-slate-500"; // Pro (sky-400 with better contrast)
+      cellColor = "bg-gray-400"; // Pro (sky-400 with better contrast)
       textColor = "text-white";
     } else if (avgTime <= 10) {
-      cellColor = "bg-slate-700"; // Journeyman (violet-500 with better contrast)
+      cellColor = "bg-gray-500"; // Journeyman (violet-500 with better contrast)
       textColor = "text-white";
     } else {
-      cellColor = "bg-slate-800"; // Noob (blue-800 with better contrast)
+      cellColor = "bg-gray-600"; // Noob (blue-800 with better contrast)
       textColor = "text-white";
     }
 
@@ -102,13 +111,16 @@ const HeatMap = ({
   return (
     <div className="bg-gray-800 bg-opacity-90 rounded-lg p-3 shadow-lg">
       <h3 className="text-white text-sm font-bold mb-2">
-        {isLearningMode && levelRange 
+        {isLearningMode && levelRange
           ? `${tableNumber}'s Table (×${minMultiplier}-${maxMultiplier})`
-          : `${tableNumber}'s Table Performance`
-        }
+          : `${tableNumber}'s Table Performance`}
       </h3>
 
-      <div className={`grid ${isLearningMode ? 'grid-cols-3' : 'grid-cols-4'} gap-1`}>
+      <div
+        className={`grid ${
+          isLearningMode ? "grid-cols-3" : "grid-cols-4"
+        } gap-1`}
+      >
         {gridData.map((cell) => (
           <div
             key={cell.multiplier}
@@ -144,23 +156,23 @@ const HeatMap = ({
       {/* Color legend matching updated rank system */}
       <div className="mt-2 flex flex-wrap gap-2 justify-center">
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-slate-50 rounded-sm mr-1"></div>
+          <div className="w-3 h-3 bg-white rounded-sm mr-1"></div>
           <span className="text-white text-xs font-bold">God ≤1s</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-slate-400 rounded-sm mr-1"></div>
+          <div className="w-3 h-3 bg-gray-300 rounded-sm mr-1"></div>
           <span className="text-white text-xs font-bold">Hacker ≤3s</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-slate-500 rounded-sm mr-1"></div>
+          <div className="w-3 h-3 bg-gray-400 rounded-sm mr-1"></div>
           <span className="text-white text-xs font-bold">Pro ≤5s</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-slate-700 rounded-sm mr-1"></div>
+          <div className="w-3 h-3 bg-gray-500 rounded-sm mr-1"></div>
           <span className="text-white text-xs font-bold">Journeyman ≤10s</span>
         </div>
         <div className="flex items-center">
-          <div className="w-3 h-3 bg-slate-800 rounded-sm mr-1"></div>
+          <div className="w-3 h-3 bg-gray-600 rounded-sm mr-1"></div>
           <span className="text-white text-xs font-bold">Noob &gt;10s</span>
         </div>
         <div className="flex items-center">

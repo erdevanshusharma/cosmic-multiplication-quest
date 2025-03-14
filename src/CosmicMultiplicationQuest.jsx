@@ -96,7 +96,7 @@ const CosmicMultiplicationQuest = () => {
     loadFromLocalStorage("cosmicQuest_attemptCounts", {})
   ); // Track number of attempts for each question
   const [showPerformanceView, setShowPerformanceView] = useState(false); // Toggle for performance view
-  
+
   // Learning mode state
   const [isLearningMode, setIsLearningMode] = useState(false);
   const [currentLearningLevel, setCurrentLearningLevel] = useState(null);
@@ -184,7 +184,7 @@ const CosmicMultiplicationQuest = () => {
   useEffect(() => {
     saveToLocalStorage("cosmicQuest_attemptCounts", attemptCounts);
   }, [attemptCounts]);
-  
+
   // Save learning mode response times when they change
   useEffect(() => {
     saveToLocalStorage(LEARNING_MODE_STORAGE_KEYS.RESPONSE_TIMES, learningModeResponseTimes);
@@ -279,7 +279,7 @@ const CosmicMultiplicationQuest = () => {
     setMiniGameFeedback("");
 
     const planet = planets.find((p) => p.id === currentPlanet);
-    
+
     // Check if we're in learning mode
     if (isLearningMode && currentLearningLevel) {
       const result = generateLearningModeQuestion(
@@ -289,7 +289,7 @@ const CosmicMultiplicationQuest = () => {
         responseTimes,
         currentLearningLevel.range
       );
-      
+
       setPreviousMultiplier(result.newMultiplier);
       setCurrentQuestion(result.question);
       setAnswerOptions(result.options);
@@ -313,26 +313,26 @@ const CosmicMultiplicationQuest = () => {
       setTimerRunning(true);
     }
   };
-  
+
   // Find the next learning level
   const findNextLearningLevel = (currentLevelId) => {
     const allLevels = getLearningLevels();
     const currentIndex = allLevels.findIndex(level => level.id === currentLevelId);
-    
+
     // Return the next level or null if at the end
     return currentIndex < allLevels.length - 1 ? allLevels[currentIndex + 1] : null;
   };
-  
+
   // Change to a specific learning level
   const changeLearningLevel = (level) => {
     setCurrentLearningLevel(level);
-    
+
     // Reset mini-game state
     setMiniGameActive(false);
     setMiniGameFeedback("");
-    
+
     const planet = planets.find((p) => p.id === currentPlanet);
-    
+
     // Generate first question for the new level
     const result = generateLearningModeQuestion(
       { ...planet, isLearningMode: true },
@@ -341,7 +341,7 @@ const CosmicMultiplicationQuest = () => {
       responseTimes,
       level.range
     );
-    
+
     setPreviousMultiplier(result.newMultiplier);
     setCurrentQuestion(result.question);
     setAnswerOptions(result.options);
@@ -349,18 +349,18 @@ const CosmicMultiplicationQuest = () => {
     setFeedback(""); // Clear any existing feedback
     setTimerRunning(false); // No timer in learning mode
   };
-  
+
   // Exit learning mode and return to normal game mode
   const exitLearningMode = () => {
     setIsLearningMode(false);
     setCurrentLearningLevel(null);
-    
+
     // Reset mini-game state
     setMiniGameActive(false);
     setMiniGameFeedback("");
-    
+
     const planet = planets.find((p) => p.id === currentPlanet);
-    
+
     // Generate first question for normal mode
     const result = generateQuestion(
       planet,
@@ -368,7 +368,7 @@ const CosmicMultiplicationQuest = () => {
       attemptCounts,
       responseTimes
     );
-    
+
     setPreviousMultiplier(result.newMultiplier);
     setCurrentQuestion(result.question);
     setAnswerOptions(result.options);
@@ -376,7 +376,7 @@ const CosmicMultiplicationQuest = () => {
     setFeedback(""); // Clear any existing feedback
     setTimerRunning(true); // Start timer for normal mode
   };
-  
+
   // Handle level completion and progression
   const handleLevelCompletion = () => {
     // If there's a next level, move to it
@@ -386,23 +386,23 @@ const CosmicMultiplicationQuest = () => {
       // If all levels are completed, exit to normal mode
       exitLearningMode();
     }
-    
+
     // Hide the completion modal
     setShowLevelCompletion(false);
     setCompletedLevel(null);
     setNextLevel(null);
     setLevelCompletionRank(null);
   };
-  
+
   // Start learning mode with selected level
   const startLearningMode = (planet, level) => {
     setIsLearningMode(true);
     setCurrentLearningLevel(level);
-    
+
     // Reset mini-game state
     setMiniGameActive(false);
     setMiniGameFeedback("");
-    
+
     // Generate first question
     const result = generateLearningModeQuestion(
       { ...planet, isLearningMode: true },
@@ -411,7 +411,7 @@ const CosmicMultiplicationQuest = () => {
       responseTimes,
       level.range
     );
-    
+
     setPreviousMultiplier(result.newMultiplier);
     setCurrentQuestion(result.question);
     setAnswerOptions(result.options);
@@ -442,7 +442,7 @@ const CosmicMultiplicationQuest = () => {
     // Track answer for metrics
     const questionKey = `${currentQuestion.multiplicand}x${currentQuestion.multiplier}`;
     const planet = planets.find((p) => p.id === currentPlanet);
-    
+
     // Calculate response time differently based on mode
     let secondsUsed;
     if (isLearningMode) {
@@ -467,49 +467,49 @@ const CosmicMultiplicationQuest = () => {
         // Learning mode - store in learning mode response times only
         const planetKey = `planet_${currentPlanet}`;
         const levelKey = `level_${currentLearningLevel.id}`;
-        
+
         // Update learning mode response times
         setLearningModeResponseTimes(prev => {
           // Create nested structure if it doesn't exist
           let updatedData = { ...prev };
-          
+
           if (!updatedData[planetKey]) {
             updatedData[planetKey] = {};
           }
-          
+
           if (!updatedData[planetKey][levelKey]) {
             updatedData[planetKey][levelKey] = {};
           }
-          
+
           if (!updatedData[planetKey][levelKey][questionKey]) {
             updatedData[planetKey][levelKey][questionKey] = [];
           }
-          
+
           // Add the new response time
           updatedData[planetKey][levelKey][questionKey] = [
             ...updatedData[planetKey][levelKey][questionKey],
             secondsUsed
           ];
-          
+
           return updatedData;
         });
-        
+
         // Check if level is completed
         const levelData = getLearningModeMasteryData(
-          planet, 
+          planet,
           currentLearningLevel.id,
           correctAnswers,
           wrongAnswers,
           learningModeResponseTimes
         );
-        
+
         // Auto-save completion status - consider complete if rank is Pro or better
         if (levelData.playerRank && ['Pro', 'Hacker', 'God'].includes(levelData.playerRank.rank)) {
           saveLearningModeLevelCompletion(
             currentPlanet,
             currentLearningLevel.id,
-            { 
-              completed: true, 
+            {
+              completed: true,
               playerRank: levelData.playerRank
             }
           );
@@ -528,7 +528,7 @@ const CosmicMultiplicationQuest = () => {
           },
         }));
       }
-      
+
       // Important: We always track correct answers for both modes
       // This ensures the global stats are maintained
       setCorrectAnswers((prev) => ({
@@ -547,12 +547,12 @@ const CosmicMultiplicationQuest = () => {
       // Different point calculation based on mode
       let pointsEarned = 0;
       let feedbackText = "";
-      
+
       if (isLearningMode) {
         // Learning mode - simpler point system without time pressure
         pointsEarned = 10; // Fixed points for learning mode
         feedbackText = `Correct! +${pointsEarned} points`;
-        
+
         // If this is an actual timed response, add info about the time
         if (secondsUsed) {
           feedbackText = `${feedbackText}\nTime: ${secondsUsed.toFixed(1)}s`;
@@ -598,7 +598,7 @@ const CosmicMultiplicationQuest = () => {
           feedbackText = `${feedbackText}\n${speedBonusText}`;
         }
       }
-      
+
       setScore((prev) => prev + pointsEarned);
       setFeedback(feedbackText);
 
@@ -696,40 +696,40 @@ const CosmicMultiplicationQuest = () => {
           generateNewQuestion();
         }, 1500);
       }
-      
+
       // If in learning mode, check if level is completed after correct answer
       if (isLearningMode && currentLearningLevel) {
         const levelData = getLearningModeMasteryData(
-          planet, 
+          planet,
           currentLearningLevel.id,
           correctAnswers,
           wrongAnswers,
           learningModeResponseTimes
         );
-        
+
         // If player achieved Pro rank or higher, trigger level completion
-        if (levelData.playerRank && 
-            ['Pro', 'Hacker', 'God'].includes(levelData.playerRank.rank) && 
+        if (levelData.playerRank &&
+            ['Pro', 'Hacker', 'God'].includes(levelData.playerRank.rank) &&
             !isLearningModeLevelCompleted(currentPlanet, currentLearningLevel.id)) {
-          
+
           // Save completion status
           saveLearningModeLevelCompletion(
             currentPlanet,
             currentLearningLevel.id,
-            { 
-              completed: true, 
+            {
+              completed: true,
               playerRank: levelData.playerRank
             }
           );
-          
+
           // Find the next level for progression
           const nextLevelData = findNextLearningLevel(currentLearningLevel.id);
-          
+
           // Set up the completion celebration
           setCompletedLevel(currentLearningLevel);
           setNextLevel(nextLevelData);
           setLevelCompletionRank(levelData.playerRank);
-          
+
           // Show the completion celebration after a short delay
           setTimeout(() => {
             setShowLevelCompletion(true);
@@ -880,7 +880,7 @@ const CosmicMultiplicationQuest = () => {
     setGameState("game");
     setScore(0);
     setLives(3);
-    
+
     // Exit learning mode when starting a new planet game
     setIsLearningMode(false);
     setCurrentLearningLevel(null);
@@ -963,69 +963,13 @@ const CosmicMultiplicationQuest = () => {
     }
   };
 
-  // Create a completely new profile (full reset)
-  const createNewProfile = () => {
-    if (
-      window.confirm(
-        "This will create a completely new profile and clear ALL data. Are you sure you want to continue? This cannot be undone."
-      )
-    ) {
-      // Clear the entire localStorage for this app
-      try {
-        // Get all keys from localStorage
-        const allKeys = Object.keys(localStorage);
-
-        // Filter only keys related to our app
-        const appKeys = allKeys.filter((key) => key.startsWith("cosmicQuest_"));
-
-        // Remove all app-related keys
-        appKeys.forEach((key) => {
-          localStorage.removeItem(key);
-        });
-
-        // Generate a new unique profile ID
-        const newProfileId = `profile_${Date.now()}`;
-        localStorage.setItem("cosmicQuest_profileId", newProfileId);
-
-        // Reset all state variables to defaults
-        setGameState("menu");
-        setCurrentPlanet(1);
-        setScore(0);
-        setLives(3);
-        setFeedback("");
-        setUnlockedPlanets([1]);
-        setSpeedBoost(1);
-        setCorrectAnswers({});
-        setWrongAnswers({});
-        setSpaceshipParts(0);
-        setBadges([]);
-        setPlanetMastery({});
-        setFastAnswers({});
-        setLastPlayed(null);
-        setResponseTimes({});
-        setAttemptCounts({});
-        setShowPerformanceView(false);
-        setIsLearningMode(false);
-        setCurrentLearningLevel(null);
-        setLearningModeResponseTimes({});
-
-        // Show confirmation and reload the page to ensure a fresh start
-        alert("New profile created successfully! Starting fresh...");
-        window.location.reload();
-      } catch (error) {
-        console.error("Error creating new profile:", error);
-        alert("There was an error creating a new profile. Please try again.");
-      }
-    }
-  };
-
   // Timer effect
   useEffect(() => {
     // Skip timer in learning mode
     if (isLearningMode) {
       return;
     }
-    
+
     let timer;
     if (timerRunning && timeRemaining > 0) {
       timer = setTimeout(() => {
@@ -1066,7 +1010,6 @@ const CosmicMultiplicationQuest = () => {
             unlockedPlanets={unlockedPlanets}
             correctAnswers={correctAnswers}
             resetProgress={resetProgress}
-            createNewProfile={createNewProfile}
           />
         )}
 
@@ -1099,9 +1042,9 @@ const CosmicMultiplicationQuest = () => {
               changeLearningLevel={changeLearningLevel}
               exitLearningMode={exitLearningMode}
             />
-            
+
             {/* Level completion celebration */}
-            <LevelCompletionConfetti 
+            <LevelCompletionConfetti
               show={showLevelCompletion}
               level={completedLevel}
               rank={levelCompletionRank}

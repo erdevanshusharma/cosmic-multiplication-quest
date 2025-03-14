@@ -1,6 +1,13 @@
 import React from "react";
 
-const MainMenu = ({ startGame, setGameState, score, unlockedPlanets, correctAnswers, resetProgress, createNewProfile }) => {
+const MainMenu = ({
+  startGame,
+  setGameState,
+  score,
+  unlockedPlanets,
+  correctAnswers,
+  resetProgress,
+}) => {
   return (
     <div className="space-y-8 text-center">
       <div className="mb-8">
@@ -51,8 +58,8 @@ const MainMenu = ({ startGame, setGameState, score, unlockedPlanets, correctAnsw
         <p className="text-sm">
           Explore 18 unique planets, each representing a multiplication table
           from 2 to 20. Answer correctly to earn points and unlock new planets!
-          Master the advanced tables to become a true Space Mathematician! 
-          Watch out for special mini-games to test your math skills!
+          Master the advanced tables to become a true Space Mathematician! Watch
+          out for special mini-games to test your math skills!
         </p>
       </div>
 
@@ -69,13 +76,6 @@ const MainMenu = ({ startGame, setGameState, score, unlockedPlanets, correctAnsw
             Reset Progress
           </button>
         )}
-
-        <button
-          onClick={createNewProfile}
-          className="text-purple-400 underline text-sm hover:text-purple-300 transition-colors"
-        >
-          Create New Profile
-        </button>
       </div>
     </div>
   );
