@@ -2,7 +2,7 @@
 export const planets = [
   {
     id: 1,
-    name: "Mercury",
+    name: "Venus",
     table: 2,
     color: "bg-amber-300",
   },
