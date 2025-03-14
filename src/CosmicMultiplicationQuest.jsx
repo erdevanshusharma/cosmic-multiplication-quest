@@ -11,7 +11,7 @@ import {
   isLearningModeLevelCompleted,
   loadLearningModeProgress,
   saveLearningModeProgress,
-  LEARNING_MODE_STORAGE_KEYS
+  LEARNING_MODE_STORAGE_KEYS,
 } from "./utils/LocalStorageUtils";
 import StarsBackground from "./components/StarsBackground";
 import MainMenu from "./components/MainMenu";
@@ -22,10 +22,17 @@ import {
   generateQuestion,
   generateMiniGameQuestion,
   getDifficultyTimeLimit,
-  generateLearningModeQuestion
+  generateLearningModeQuestion,
 } from "./utils/QuestionGenerator";
-import { getAverageResponseTime, getPlayerRank, getLearningModeMasteryData } from "./utils/MetricsUtils";
-import { isLearningModeEnabled, getLearningLevels } from "./utils/LearningModeConfig";
+import {
+  getAverageResponseTime,
+  getPlayerRank,
+  getLearningModeMasteryData,
+} from "./utils/MetricsUtils";
+import {
+  isLearningModeEnabled,
+  getLearningLevels,
+} from "./utils/LearningModeConfig";
 
 const CosmicMultiplicationQuest = () => {
   // Initialize or get profile ID
@@ -187,7 +194,10 @@ const CosmicMultiplicationQuest = () => {
 
   // Save learning mode response times when they change
   useEffect(() => {
-    saveToLocalStorage(LEARNING_MODE_STORAGE_KEYS.RESPONSE_TIMES, learningModeResponseTimes);
+    saveToLocalStorage(
+      LEARNING_MODE_STORAGE_KEYS.RESPONSE_TIMES,
+      learningModeResponseTimes
+    );
   }, [learningModeResponseTimes]);
 
   // Update last played time whenever the game is started or resumed
@@ -317,10 +327,14 @@ const CosmicMultiplicationQuest = () => {
   // Find the next learning level
   const findNextLearningLevel = (currentLevelId) => {
     const allLevels = getLearningLevels();
-    const currentIndex = allLevels.findIndex(level => level.id === currentLevelId);
+    const currentIndex = allLevels.findIndex(
+      (level) => level.id === currentLevelId
+    );
 
     // Return the next level or null if at the end
-    return currentIndex < allLevels.length - 1 ? allLevels[currentIndex + 1] : null;
+    return currentIndex < allLevels.length - 1
+      ? allLevels[currentIndex + 1]
+      : null;
   };
 
   // Change to a specific learning level
@@ -469,7 +483,7 @@ const CosmicMultiplicationQuest = () => {
         const levelKey = `level_${currentLearningLevel.id}`;
 
         // Update learning mode response times
-        setLearningModeResponseTimes(prev => {
+        setLearningModeResponseTimes((prev) => {
           // Create nested structure if it doesn't exist
           let updatedData = { ...prev };
 
@@ -488,7 +502,7 @@ const CosmicMultiplicationQuest = () => {
           // Add the new response time
           updatedData[planetKey][levelKey][questionKey] = [
             ...updatedData[planetKey][levelKey][questionKey],
-            secondsUsed
+            secondsUsed,
           ];
 
           return updatedData;
@@ -504,13 +518,16 @@ const CosmicMultiplicationQuest = () => {
         );
 
         // Auto-save completion status - consider complete if rank is Pro or better
-        if (levelData.playerRank && ['Pro', 'Hacker', 'God'].includes(levelData.playerRank.rank)) {
+        if (
+          levelData.playerRank &&
+          ["Pro", "Hacker", "God"].includes(levelData.playerRank.rank)
+        ) {
           saveLearningModeLevelCompletion(
             currentPlanet,
             currentLearningLevel.id,
             {
               completed: true,
-              playerRank: levelData.playerRank
+              playerRank: levelData.playerRank,
             }
           );
         }
@@ -572,7 +589,7 @@ const CosmicMultiplicationQuest = () => {
         let speedMultiplier = 1;
         let speedBonusText = "";
 
-        const fullTimeLimit = getDifficultyTimeLimit(planet.table);
+        const fullTimeLimit = getDifficultyTimeLimit();
         const secondsUsed = fullTimeLimit - timeRemaining;
 
         if (timeRemaining >= fullTimeLimit * 0.8) {
@@ -581,10 +598,13 @@ const CosmicMultiplicationQuest = () => {
           speedBonusText = `SUPER FAST! ⚡⚡ (${secondsUsed.toFixed(
             2
           )}s - 2× points)`;
+          debugger;
         } else if (timeRemaining >= fullTimeLimit * 0.6) {
           // Fast answer (60%+ of time remaining)
           speedMultiplier = 1.5;
-          speedBonusText = `FAST! ⚡ (${secondsUsed.toFixed(2)}s - 1.5× points)`;
+          speedBonusText = `FAST! ⚡ (${secondsUsed.toFixed(
+            2
+          )}s - 1.5× points)`;
         }
 
         // Calculate final points and round to integer
@@ -604,7 +624,7 @@ const CosmicMultiplicationQuest = () => {
 
       // Track fast answers for the current planet (answers where time remaining is high)
       // With 15 second timer for all questions, consider answers with 10+ seconds remaining as fast
-      const isFastAnswer = timeRemaining >= 10;
+      const isFastAnswer = timeRemaining >= 5;
 
       if (isFastAnswer) {
         setFastAnswers((prev) => ({
@@ -708,17 +728,18 @@ const CosmicMultiplicationQuest = () => {
         );
 
         // If player achieved Pro rank or higher, trigger level completion
-        if (levelData.playerRank &&
-            ['Pro', 'Hacker', 'God'].includes(levelData.playerRank.rank) &&
-            !isLearningModeLevelCompleted(currentPlanet, currentLearningLevel.id)) {
-
+        if (
+          levelData.playerRank &&
+          ["Pro", "Hacker", "God"].includes(levelData.playerRank.rank) &&
+          !isLearningModeLevelCompleted(currentPlanet, currentLearningLevel.id)
+        ) {
           // Save completion status
           saveLearningModeLevelCompletion(
             currentPlanet,
             currentLearningLevel.id,
             {
               completed: true,
-              playerRank: levelData.playerRank
+              playerRank: levelData.playerRank,
             }
           );
 
@@ -947,7 +968,7 @@ const CosmicMultiplicationQuest = () => {
         // Learning mode keys
         LEARNING_MODE_STORAGE_KEYS.PROGRESS,
         LEARNING_MODE_STORAGE_KEYS.LEVEL_COMPLETION,
-        LEARNING_MODE_STORAGE_KEYS.RESPONSE_TIMES
+        LEARNING_MODE_STORAGE_KEYS.RESPONSE_TIMES,
       ];
 
       keysToRemove.forEach((key) => {

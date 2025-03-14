@@ -234,7 +234,7 @@ export const generateLearningModeQuestion = (
   levelRange
 ) => {
   const multiplicand = planet.table;
-  
+
   // Create an array of all multipliers within the level range, except the previous one
   const availableMultipliers = Array.from(
     { length: levelRange[1] - levelRange[0] + 1 },
