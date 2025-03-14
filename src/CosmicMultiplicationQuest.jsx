@@ -514,16 +514,13 @@ const CosmicMultiplicationQuest = () => {
         // Regular mode - store in standard response times
         const tableKey = `table_${currentQuestion.multiplicand}`;
         setResponseTimes((prev) => {
-          // Destructure 'table_12' out and collect the rest of the properties
-          const { table_12, ...updatedPrev } = prev;
-
           // Return the new state object
           return {
-            ...updatedPrev,
+            ...prev,
             [tableKey]: {
-              ...(updatedPrev[tableKey] || {}),
+              ...(prev[tableKey] || {}),
               [questionKey]: [
-                ...(updatedPrev[tableKey]?.[questionKey] || []),
+                ...(prev[tableKey]?.[questionKey] || []),
                 secondsUsed,
               ],
             },
