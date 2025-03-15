@@ -50,13 +50,13 @@ const LearningModeMetrics = ({
 
   // We already calculated completion percentage above based on range coverage
 
-  // Check if player has achieved Pro rank or better
-  const hasAchievedProRank =
+  // Check if player has achieved Hacker rank or better
+  const hasAchievedHackerRank =
     totalQuestions === totalQuestionsInRange &&
     totalAnswers >= totalQuestionsInRange * 5 &&
     completionPercentage === 100 &&
     playerRank &&
-    ["Pro", "Hacker", "God"].includes(playerRank.rank);
+    ["Hacker", "God"].includes(playerRank.rank);
   return (
     <div className="bg-gray-800 rounded-lg p-4 mt-4 shadow-lg">
       <div className="flex justify-between items-center mb-3">
@@ -97,7 +97,7 @@ const LearningModeMetrics = ({
         ></div>
       </div>
 
-      {hasAchievedProRank && (
+      {hasAchievedHackerRank && (
         <button
           onClick={onChangeLevel}
           className="mt-3 text-center p-2 px-4 bg-emerald-800 rounded-full text-white"

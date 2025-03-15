@@ -166,7 +166,7 @@ export const generateQuestion = (
   return {
     question: newQuestion,
     options,
-    newMultiplier: multiplier
+    newMultiplier: multiplier,
   };
 };
 
@@ -189,9 +189,7 @@ export const generateMiniGameQuestion = () => {
     } else {
       // Common mistake: adding or wrong operation
       wrongAnswer =
-        Math.random() < 0.5
-          ? firstNum + secondNum
-          : firstNum * (secondNum + 1);
+        Math.random() < 0.5 ? firstNum + secondNum : firstNum * (secondNum + 1);
     }
 
     // Ensure the wrong answer is positive and unique
@@ -244,7 +242,8 @@ export const generateLearningModeQuestion = (
   // If no multipliers are available (unlikely but possible), just pick a random one from the range
   if (availableMultipliers.length === 0) {
     availableMultipliers.push(
-      Math.floor(Math.random() * (levelRange[1] - levelRange[0] + 1)) + levelRange[0]
+      Math.floor(Math.random() * (levelRange[1] - levelRange[0] + 1)) +
+        levelRange[0]
     );
   }
 
@@ -384,6 +383,6 @@ export const generateLearningModeQuestion = (
   return {
     question: newQuestion,
     options,
-    newMultiplier: multiplier
+    newMultiplier: multiplier,
   };
 };

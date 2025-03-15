@@ -444,7 +444,7 @@ const CosmicMultiplicationQuest = () => {
       secondsUsed = 3; // Default value for tracking purpose
     } else {
       // Regular mode - calculate from timer
-      const fullTimeLimit = getDifficultyTimeLimit(planet.table);
+      const fullTimeLimit = getDifficultyTimeLimit(isLearningMode);
       secondsUsed = fullTimeLimit - timeRemaining;
     }
 
@@ -496,10 +496,10 @@ const CosmicMultiplicationQuest = () => {
           learningModeResponseTimes
         );
 
-        // Auto-save completion status - consider complete if rank is Pro or better
+        // Auto-save completion status - consider complete if rank is Hacker or better
         if (
           levelData.playerRank &&
-          ["Pro", "Hacker", "God"].includes(levelData.playerRank.rank)
+          ["Hacker", "God"].includes(levelData.playerRank.rank)
         ) {
           saveLearningModeLevelCompletion(
             currentPlanet,
@@ -667,27 +667,28 @@ const CosmicMultiplicationQuest = () => {
         // Unlock the next planet if there is one and it's not already unlocked
         if (nextPlanetId && !unlockedPlanets.includes(nextPlanetId)) {
           setUnlockedPlanets((prev) => [...prev, nextPlanetId]);
+
+          setBadges((prev) => [
+            ...prev,
+            `Unlocked ${planets[currentPlanet].name}`,
+          ]);
+
+          // Show special unlock notification
+          const nextPlanet = planets.find((p) => p.id === currentPlanet + 1);
+          const unlockMessage = `🎉 ACHIEVEMENT UNLOCKED! 🎉\n\nYou've mastered ${
+            planets[currentPlanet - 1].name
+          }'s table!\n\n${nextPlanet.name} (${
+            nextPlanet.table
+          }'s table) is now available!`;
+
+          // Show a modal-style alert for planet unlock (after a short delay)
+          setTimeout(() => {
+            alert(unlockMessage);
+          }, 500);
+
+          // Also set feedback with unlock message
+          setFeedback((prev) => `${prev}\n🎉 New planet unlocked! 🎉`);
         }
-        setBadges((prev) => [
-          ...prev,
-          `Unlocked ${planets[currentPlanet].name}`,
-        ]);
-
-        // Show special unlock notification
-        const nextPlanet = planets.find((p) => p.id === currentPlanet + 1);
-        const unlockMessage = `🎉 ACHIEVEMENT UNLOCKED! 🎉\n\nYou've mastered ${
-          planets[currentPlanet - 1].name
-        }'s table!\n\n${nextPlanet.name} (${
-          nextPlanet.table
-        }'s table) is now available!`;
-
-        // Show a modal-style alert for planet unlock (after a short delay)
-        setTimeout(() => {
-          alert(unlockMessage);
-        }, 500);
-
-        // Also set feedback with unlock message
-        setFeedback((prev) => `${prev}\n🎉 New planet unlocked! 🎉`);
       }
 
       // Random chance to trigger mini-game - only in normal mode, not learning mode
@@ -713,10 +714,10 @@ const CosmicMultiplicationQuest = () => {
           learningModeResponseTimes
         );
 
-        // If player achieved Pro rank or higher, trigger level completion
+        // If player achieved Hacker rank or higher, trigger level completion
         if (
           levelData.playerRank &&
-          ["Pro", "Hacker", "God"].includes(levelData.playerRank.rank) &&
+          ["Hacker", "God"].includes(levelData.playerRank.rank) &&
           !isLearningModeLevelCompleted(currentPlanet, currentLearningLevel.id)
         ) {
           // Save completion status
