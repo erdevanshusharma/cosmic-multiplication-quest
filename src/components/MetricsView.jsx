@@ -13,6 +13,7 @@ const MetricsView = ({
   showPerformanceView,
   setShowPerformanceView,
   attemptCounts,
+  resetPlanetStats,
 }) => {
   const masteryData = getMasteryData(
     planets,
@@ -74,14 +75,30 @@ const MetricsView = ({
                       {planet.table}'s Table
                     </p>
                   </div>
-                  <div
-                    className={`rounded-full w-12 h-12 flex items-center justify-center ${
-                      isUnlocked
-                        ? "bg-white bg-opacity-20"
-                        : "bg-gray-700 bg-opacity-20"
-                    }`}
-                  >
-                    <span className="text-lg">{planet.table}</span>
+                  <div className="flex items-start space-x-2">
+                    {isUnlocked && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          resetPlanetStats(planet.id);
+                        }}
+                        className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-700 hover:bg-opacity-50 transition-all"
+                        title="Reset stats for this planet"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    )}
+                    <div
+                      className={`rounded-full w-12 h-12 flex items-center justify-center ${
+                        isUnlocked
+                          ? "bg-white bg-opacity-20"
+                          : "bg-gray-700 bg-opacity-20"
+                      }`}
+                    >
+                      <span className="text-lg">{planet.table}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -233,13 +250,24 @@ const MetricsView = ({
                   key={`heatmap-${planet.id}`}
                   className="p-3 bg-gray-700 bg-opacity-30 rounded-lg"
                 >
-                  <div className="flex items-center mb-2">
-                    <div
-                      className={`w-4 h-4 ${planet.color} rounded-full mr-2`}
-                    ></div>
-                    <h4 className="text-lg font-bold">
-                      {planet.name} ({planet.table}'s Table)
-                    </h4>
+                  <div className="flex items-center mb-2 justify-between">
+                    <div className="flex items-center">
+                      <div
+                        className={`w-4 h-4 ${planet.color} rounded-full mr-2`}
+                      ></div>
+                      <h4 className="text-lg font-bold">
+                        {planet.name} ({planet.table}'s Table)
+                      </h4>
+                    </div>
+                    <button
+                      onClick={() => resetPlanetStats(planet.id)}
+                      className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-700 hover:bg-opacity-50 transition-all"
+                      title="Reset stats for this planet"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clipRule="evenodd" />
+                      </svg>
+                    </button>
                   </div>
                   <HeatMap
                     tableNumber={planet.table}

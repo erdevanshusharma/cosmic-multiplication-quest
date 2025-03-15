@@ -1005,6 +1005,102 @@ const CosmicMultiplicationQuest = () => {
     return () => clearTimeout(timer);
   }, [timerRunning, timeRemaining, lives, currentQuestion, isLearningMode]);
 
+  // Function to reset stats for a specific planet
+  const resetPlanetStats = (planetId) => {
+    if (!window.confirm(`Reset stats for ${planets.find(p => p.id === planetId).name}? This cannot be undone.`)) {
+      return;
+    }
+
+    // Get the planet's table number
+    const planetTable = planets.find(p => p.id === planetId).table;
+    
+    // Reset normal mode stats
+    setCorrectAnswers(prevCorrect => {
+      const newCorrect = { ...prevCorrect };
+      // Remove all entries for this table (e.g., "2x1", "2x2", etc.)
+      Object.keys(newCorrect).forEach(key => {
+        if (key.startsWith(`${planetTable}x`) || key.startsWith(`${planetTable}×`)) {
+          delete newCorrect[key];
+        }
+      });
+      return newCorrect;
+    });
+
+    setWrongAnswers(prevWrong => {
+      const newWrong = { ...prevWrong };
+      // Remove all entries for this table
+      Object.keys(newWrong).forEach(key => {
+        if (key.startsWith(`${planetTable}x`) || key.startsWith(`${planetTable}×`)) {
+          delete newWrong[key];
+        }
+      });
+      return newWrong;
+    });
+
+    setResponseTimes(prevTimes => {
+      const newTimes = { ...prevTimes };
+      // Remove all entries for this table
+      if (newTimes[`table_${planetTable}`]) {
+        delete newTimes[`table_${planetTable}`];
+      }
+      return newTimes;
+    });
+
+    setAttemptCounts(prevCounts => {
+      const newCounts = { ...prevCounts };
+      // Remove all entries for this table
+      Object.keys(newCounts).forEach(key => {
+        if (key.startsWith(`${planetTable}x`) || key.startsWith(`${planetTable}×`)) {
+          delete newCounts[key];
+        }
+      });
+      return newCounts;
+    });
+
+    // Reset learning mode stats
+    setLearningModeResponseTimes(prevTimes => {
+      const newTimes = { ...prevTimes };
+      // Remove planet entries from learning mode response times
+      if (newTimes[`planet_${planetId}`]) {
+        delete newTimes[`planet_${planetId}`];
+      }
+      return newTimes;
+    });
+
+    // Reset planet mastery for this planet
+    setPlanetMastery(prevMastery => {
+      const newMastery = { ...prevMastery };
+      if (newMastery[planetId]) {
+        delete newMastery[planetId];
+      }
+      return newMastery;
+    });
+
+    // Reset fast answers for this planet
+    setFastAnswers(prevFastAnswers => {
+      const newFastAnswers = { ...prevFastAnswers };
+      if (newFastAnswers[planetId]) {
+        delete newFastAnswers[planetId];
+      }
+      return newFastAnswers;
+    });
+
+    // Clear learning mode level completion data for this planet
+    const learningModeLevelCompletion = loadFromLocalStorage(LEARNING_MODE_STORAGE_KEYS.LEVEL_COMPLETION, {});
+    const planetKey = `planet_${planetId}`;
+    if (learningModeLevelCompletion[planetKey]) {
+      delete learningModeLevelCompletion[planetKey];
+      saveToLocalStorage(LEARNING_MODE_STORAGE_KEYS.LEVEL_COMPLETION, learningModeLevelCompletion);
+    }
+
+    // Clear learning mode progress for this planet
+    const learningModeProgress = loadFromLocalStorage(LEARNING_MODE_STORAGE_KEYS.PROGRESS, {});
+    if (learningModeProgress[planetId]) {
+      delete learningModeProgress[planetId];
+      saveToLocalStorage(LEARNING_MODE_STORAGE_KEYS.PROGRESS, learningModeProgress);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 bg-[url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1471&q=80')] bg-cover bg-center bg-blend-overlay py-8 px-4 relative overflow-hidden">
       <StarsBackground />
@@ -1074,6 +1170,7 @@ const CosmicMultiplicationQuest = () => {
             showPerformanceView={showPerformanceView}
             setShowPerformanceView={setShowPerformanceView}
             attemptCounts={attemptCounts}
+            resetPlanetStats={resetPlanetStats}
           />
         )}
       </div>
