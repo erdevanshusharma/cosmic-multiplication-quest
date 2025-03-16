@@ -6,25 +6,27 @@
     <title>Cosmic Multiplication Quest</title>
     <script type="text/javascript">
       // Single-Page App Routing Fix for GitHub Pages
-      (function() {
+      (function () {
         // If we're not on GitHub Pages, skip this
-        if (window.location.hostname === 'localhost' || 
-            window.location.hostname === '127.0.0.1') {
+        if (
+          window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1"
+        ) {
           return;
         }
-        
+
         var redirect = sessionStorage.redirect;
         delete sessionStorage.redirect;
-        
+
         if (redirect && redirect !== window.location.href) {
           history.replaceState(null, null, redirect);
         }
       })();
     </script>
-    <script type="module" crossorigin src="/cosmic-multiplication-quest/assets/index-DleS42qV.js"></script>
-    <link rel="stylesheet" crossorigin href="/cosmic-multiplication-quest/assets/index-B5xtMGt3.css">
+    <script type="module" crossorigin src="/cosmic-multiplication-quest/assets/index-B36llxKp.js"></script>
+    <link rel="stylesheet" crossorigin href="/cosmic-multiplication-quest/assets/index-CdizzFMk.css">
   </head>
-  <body>
+  <body className="bg-black">
     <div id="root"></div>
   </body>
 </html>
