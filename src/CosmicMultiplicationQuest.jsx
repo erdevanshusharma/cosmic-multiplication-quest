@@ -15,7 +15,6 @@ import MetricsView from "./components/MetricsView";
 import LevelCompletionConfetti from "./components/LevelCompletionConfetti";
 import {
   generateQuestion,
-  generateMiniGameQuestion,
   getDifficultyTimeLimit,
   generateLearningModeQuestion,
 } from "./utils/QuestionGenerator";
@@ -65,9 +64,7 @@ const CosmicMultiplicationQuest = () => {
   const [badges, setBadges] = useState(
     loadFromLocalStorage("cosmicQuest_badges", [])
   );
-  const [miniGameActive, setMiniGameActive] = useState(false);
-  const [miniGameType, setMiniGameType] = useState("");
-  const [miniGameFeedback, setMiniGameFeedback] = useState("");
+  // Removed minigame state variables
   const [planetMastery, setPlanetMastery] = useState(
     loadFromLocalStorage("cosmicQuest_planetMastery", {})
   ); // Tracks mastery level for each planet
@@ -342,8 +339,6 @@ const CosmicMultiplicationQuest = () => {
   // Generate a new multiplication question based on current planet
   const generateNewQuestion = () => {
     // Clear any feedback and set game to active mode
-    setMiniGameActive(false);
-    setMiniGameFeedback("");
     setFeedback(""); // Ensure feedback is cleared
 
     // Set the question start time for timing calculations
@@ -795,18 +790,10 @@ const CosmicMultiplicationQuest = () => {
         }
       }
 
-      // Random chance to trigger mini-game - only in normal mode, not learning mode
-      if (!isLearningMode && Math.random() < 0.2) {
-        // Show feedback first, then trigger mini-game after a delay
-        setTimeout(() => {
-          triggerMiniGame();
-        }, 1500);
-      } else {
-        // Continue with next question
-        setTimeout(() => {
-          generateNewQuestion();
-        }, 1500);
-      }
+      // Continue with next question
+      setTimeout(() => {
+        generateNewQuestion();
+      }, 1500);
 
       // If in learning mode, check if level is completed after correct answer
       if (isLearningMode && currentLearningLevel) {
@@ -922,74 +909,7 @@ const CosmicMultiplicationQuest = () => {
   };
 
   // Trigger a mini-game
-  const triggerMiniGame = () => {
-    setTimerRunning(false);
-    setMiniGameActive(true);
-    setMiniGameType(Math.random() < 0.5 ? "asteroid" : "landing");
-
-    // Clear any existing feedback when starting a mini-game
-    setFeedback("");
-
-    const result = generateMiniGameQuestion();
-    setCurrentQuestion(result.question);
-    setAnswerOptions(result.options);
-  };
-
-  // Complete mini-game based on selected answer
-  const completeMiniGame = (selectedAnswer) => {
-    const success = selectedAnswer === currentQuestion.answer;
-
-    if (success) {
-      // Use rounded integer points
-      const bonusPoints = 50;
-      setScore((prev) => prev + bonusPoints);
-
-      // Create a more exciting success message
-      let successMessage;
-
-      if (miniGameType === "asteroid") {
-        successMessage = `🎯 MISSION SUCCESS! 🎯\n+${bonusPoints} points\nYou've successfully navigated through the asteroid field!`;
-      } else {
-        successMessage = `🎯 MISSION SUCCESS! 🎯\n+${bonusPoints} points\nPerfect landing achieved on the planetary surface!`;
-      }
-
-      setMiniGameFeedback(successMessage);
-
-      // Add badge
-      setBadges((prev) => [
-        ...prev,
-        `${miniGameType === "asteroid" ? "Asteroid Dodger" : "Safe Lander"}`,
-      ]);
-    } else {
-      setMiniGameFeedback(
-        `Mission failed. The answer was ${currentQuestion.answer}.`
-      );
-    }
-
-    // Generate the next question for after the mini-game
-    const planet = planets.find((p) => p.id === currentPlanet);
-    const result = generateQuestion(
-      planet,
-      previousMultiplier,
-      attemptCounts,
-      responseTimes
-    );
-
-    // Store the next multiplier
-    setPreviousMultiplier(result.newMultiplier);
-
-    // Show feedback for a bit, then transition to the new question
-    setTimeout(() => {
-      // Perform a quick, clean transition
-      setMiniGameActive(false);
-      setMiniGameFeedback("");
-      setCurrentQuestion(result.question);
-      setAnswerOptions(result.options);
-      setTimeRemaining(result.question.timeLimit);
-      setFeedback("");
-      setTimerRunning(true);
-    }, 2000);
-  };
+  // Minigame functions removed
 
   // Handle planet selection
   const selectPlanet = (planetId) => {
@@ -1001,8 +921,6 @@ const CosmicMultiplicationQuest = () => {
       const selectedPlanet = planets.find((p) => p.id === planetId);
 
       // Reset any previous state
-      setMiniGameActive(false);
-      setMiniGameFeedback("");
       setFeedback("");
       setPreviousMultiplier(null);
 
@@ -1289,15 +1207,11 @@ const CosmicMultiplicationQuest = () => {
               score={score}
               lives={lives}
               speedBoost={speedBoost}
-              miniGameActive={miniGameActive}
-              miniGameType={miniGameType}
               currentQuestion={currentQuestion}
               timeRemaining={timeRemaining}
               answerOptions={answerOptions}
               feedback={feedback}
-              miniGameFeedback={miniGameFeedback}
               submitAnswer={submitAnswer}
-              completeMiniGame={completeMiniGame}
               setGameState={setGameState}
               responseTimes={responseTimes}
               attemptCounts={attemptCounts}

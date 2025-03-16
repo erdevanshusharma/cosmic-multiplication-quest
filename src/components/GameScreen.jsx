@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import GameHeader from "./GameHeader";
 import GameQuestion from "./GameQuestion";
-import MiniGame from "./MiniGame";
 import HeatMap from "./HeatMap";
 import LearningModeSelector from "./LearningModeSelector";
 import LearningModeMetrics from "./LearningModeMetrics";
@@ -13,15 +12,11 @@ const GameScreen = ({
   score,
   lives,
   speedBoost,
-  miniGameActive,
-  miniGameType,
   currentQuestion,
   timeRemaining,
   answerOptions,
   feedback,
-  miniGameFeedback,
   submitAnswer,
-  completeMiniGame,
   setGameState,
   responseTimes,
   attemptCounts,
@@ -71,23 +66,13 @@ const GameScreen = ({
 
       <div className="flex flex-col md:flex-row gap-4">
         <div className="md:w-8/12">
-          {!miniGameActive ? (
-            <GameQuestion
-              currentQuestion={currentQuestion}
-              timeRemaining={timeRemaining}
-              answerOptions={answerOptions}
-              feedback={feedback}
-              submitAnswer={submitAnswer}
-            />
-          ) : (
-            <MiniGame
-              miniGameType={miniGameType}
-              currentQuestion={currentQuestion}
-              answerOptions={answerOptions}
-              miniGameFeedback={miniGameFeedback}
-              completeMiniGame={completeMiniGame}
-            />
-          )}
+          <GameQuestion
+            currentQuestion={currentQuestion}
+            timeRemaining={timeRemaining}
+            answerOptions={answerOptions}
+            feedback={feedback}
+            submitAnswer={submitAnswer}
+          />
         </div>
 
         <div className="md:w-4/12">
