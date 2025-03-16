@@ -6,23 +6,25 @@
     <title>Cosmic Multiplication Quest</title>
     <script type="text/javascript">
       // Single-Page App Routing Fix for GitHub Pages
-      (function() {
+      (function () {
         // If we're not on GitHub Pages, skip this
-        if (window.location.hostname === 'localhost' || 
-            window.location.hostname === '127.0.0.1') {
+        if (
+          window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1"
+        ) {
           return;
         }
-        
+
         var redirect = sessionStorage.redirect;
         delete sessionStorage.redirect;
-        
+
         if (redirect && redirect !== window.location.href) {
           history.replaceState(null, null, redirect);
         }
       })();
     </script>
   </head>
-  <body>
+  <body className="bg-black">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
