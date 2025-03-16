@@ -79,7 +79,7 @@ const HeatMap = ({
     if (avgTime === null) {
       cellColor = "bg-gray-700"; // Not attempted
       textColor = "text-white";
-    } else if (avgTime <= 1) {
+    } else if (avgTime <= 2) {
       cellColor = "bg-white"; // God (amber-50 with better contrast)
       textColor = "text-black"; // Black text on light background
     } else if (avgTime <= 3) {
@@ -157,7 +157,7 @@ const HeatMap = ({
       <div className="mt-2 flex flex-wrap gap-2 justify-center">
         <div className="flex items-center">
           <div className="w-3 h-3 bg-white rounded-sm mr-1"></div>
-          <span className="text-white text-xs font-bold">God ≤1s</span>
+          <span className="text-white text-xs font-bold">God ≤2s</span>
         </div>
         <div className="flex items-center">
           <div className="w-3 h-3 bg-gray-300 rounded-sm mr-1"></div>

@@ -104,17 +104,6 @@ const MetricsView = ({
 
                 {isUnlocked && (
                   <div className="mt-3">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span>Mastery:</span>
-                      <span>{mastery}%</span>
-                    </div>
-                    <div className="w-full bg-gray-700 rounded-full h-2">
-                      <div
-                        className="bg-white h-2 rounded-full"
-                        style={{ width: `${mastery}%` }}
-                      ></div>
-                    </div>
-
                     {planetData && planetData.playerRank && (
                       <div
                         className={`mt-2 text-center text-xs font-bold py-1 px-2 rounded ${planetData.playerRank.color} bg-opacity-20`}

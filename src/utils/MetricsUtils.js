@@ -4,18 +4,15 @@ export const getPlayerRank = (avgResponseTime, isLearningMode = false) => {
   if (isLearningMode === true && avgResponseTime === null) {
     return { rank: "Learning", color: "text-emerald-400" };
   }
-  
+
   // Default ranks with color scheme
-  if (avgResponseTime > 10) return { rank: "Noob", color: "text-blue-800" };
-  if (avgResponseTime > 5)
+  // God rank for 2 second or under
+  if (avgResponseTime <= 2) return { rank: "God", color: "text-amber-100" };
+  if (avgResponseTime <= 3) return { rank: "Hacker", color: "text-rose-200" };
+  if (avgResponseTime <= 5) return { rank: "Pro", color: "text-sky-400" };
+  if (avgResponseTime <= 10)
     return { rank: "Journeyman", color: "text-violet-500" };
-  if (avgResponseTime > 3)
-    return { rank: "Pro", color: "text-sky-400" };
-  if (avgResponseTime > 1)
-    return { rank: "Hacker", color: "text-rose-200" };
-  // God rank for 1 second or under
-  if (avgResponseTime <= 1)
-    return { rank: "God", color: "text-amber-100" };
+  if (avgResponseTime > 10) return { rank: "Noob", color: "text-blue-800" };
 
   // Fallback (should never reach here)
   return { rank: "Unknown", color: "text-gray-400" };
@@ -71,7 +68,12 @@ export const getAverageResponseTime = (tableNumber, responseTimes) => {
 };
 
 // Get mastery percentage for each multiplication table
-export const getMasteryData = (planets, correctAnswers, wrongAnswers, responseTimes) => {
+export const getMasteryData = (
+  planets,
+  correctAnswers,
+  wrongAnswers,
+  responseTimes
+) => {
   return planets.map((planet) => {
     const tableQuestions = Object.keys(correctAnswers).filter(
       (key) => parseInt(key.split("x")[0]) === planet.table
@@ -115,15 +117,21 @@ export const getMasteryData = (planets, correctAnswers, wrongAnswers, responseTi
 };
 
 // Get mastery data for learning mode levels
-export const getLearningModeMasteryData = (planet, levelId, correctAnswers, wrongAnswers, responseTimes) => {
+export const getLearningModeMasteryData = (
+  planet,
+  levelId,
+  correctAnswers,
+  wrongAnswers,
+  responseTimes
+) => {
   // Calculate statistics for questions within the specific level range
   const planetId = planet.id;
   const tableNumber = planet.table;
-  
+
   // Get all keys for this planet/table
   const planetKey = `planet_${planetId}`;
   const levelKey = `level_${levelId}`;
-  
+
   // If we don't have data yet, return null
   if (!responseTimes[planetKey] || !responseTimes[planetKey][levelKey]) {
     return {
@@ -134,38 +142,39 @@ export const getLearningModeMasteryData = (planet, levelId, correctAnswers, wron
       playerRank: getPlayerRank(null, true),
       totalCorrect: 0,
       totalWrong: 0,
-      completed: false
+      completed: false,
     };
   }
-  
+
   const levelData = responseTimes[planetKey][levelKey];
   const questionKeys = Object.keys(levelData);
-  
+
   // Calculate totals
   let totalTime = 0;
   let totalQuestions = questionKeys.length;
   let totalAnswers = 0;
-  
-  questionKeys.forEach(key => {
+
+  questionKeys.forEach((key) => {
     const times = levelData[key];
     totalTime += times.reduce((sum, time) => sum + time, 0);
     totalAnswers += times.length;
   });
-  
+
   // Calculate average time
   const avgResponseTime = totalAnswers > 0 ? totalTime / totalAnswers : null;
-  
+
   // Get player rank based on average response time
   const playerRank = getPlayerRank(avgResponseTime, true);
-  
+
   // Calculate mastery and accuracy (placeholder - real data would come from correct/wrong answers)
   // In a real implementation, we'd track correct/wrong answers per level
   const mastery = 100; // Placeholder
   const accuracyRate = 100; // Placeholder
-  
+
   // Determine if level is completed based on rank (Pro or better)
-  const completed = playerRank && ['Pro', 'Hacker', 'God'].includes(playerRank.rank);
-  
+  const completed =
+    playerRank && ["Pro", "Hacker", "God"].includes(playerRank.rank);
+
   return {
     mastery,
     totalQuestions,
@@ -174,6 +183,6 @@ export const getLearningModeMasteryData = (planet, levelId, correctAnswers, wron
     playerRank,
     totalCorrect: totalQuestions, // Placeholder
     totalWrong: 0, // Placeholder
-    completed
+    completed,
   };
 };

@@ -56,7 +56,7 @@ const MainMenu = ({
       <div className="mt-12 text-gray-300 max-w-md mx-auto rounded-lg bg-gray-800 bg-opacity-70 p-4">
         <h3 className="text-xl mb-2">Mission Briefing:</h3>
         <p className="text-sm">
-          Explore 18 unique planets, each representing a multiplication table
+          Explore 19 unique planets, each representing a multiplication table
           from 2 to 20. Answer correctly to earn points and unlock new planets!
           Master the advanced tables to become a true Space Mathematician! Watch
           out for special mini-games to test your math skills!
