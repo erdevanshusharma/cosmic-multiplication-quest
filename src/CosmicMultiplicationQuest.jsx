@@ -124,7 +124,11 @@ const CosmicMultiplicationQuest = () => {
     const newUrl = newPath;
 
     // Update URL without full page reload
-    window.history.pushState({ gameState, currentPlanet, showPerformanceView }, "", newUrl);
+    window.history.pushState(
+      { gameState, currentPlanet, showPerformanceView },
+      "",
+      newUrl
+    );
   }, [gameState, currentPlanet, showPerformanceView]);
 
   useEffect(() => {
@@ -231,10 +235,13 @@ const CosmicMultiplicationQuest = () => {
         if (event.state.currentPlanet) {
           setCurrentPlanet(event.state.currentPlanet);
         }
-        if (typeof event.state.showPerformanceView !== 'undefined') {
+        if (typeof event.state.showPerformanceView !== "undefined") {
           setShowPerformanceView(event.state.showPerformanceView);
           // Also update localStorage to keep it in sync
-          saveToLocalStorage("cosmicQuest_showPerformanceView", event.state.showPerformanceView);
+          saveToLocalStorage(
+            "cosmicQuest_showPerformanceView",
+            event.state.showPerformanceView
+          );
         }
       } else {
         // Default to menu if no state is available
@@ -266,7 +273,11 @@ const CosmicMultiplicationQuest = () => {
         setShowPerformanceView(true);
         // Also update localStorage
         saveToLocalStorage("cosmicQuest_showPerformanceView", true);
-      } else if (path.includes(`${baseUrl}stats/planets`) || path === `${baseUrl}stats` || path.endsWith(`${baseUrl}stats/`)) {
+      } else if (
+        path.includes(`${baseUrl}stats/planets`) ||
+        path === `${baseUrl}stats` ||
+        path.endsWith(`${baseUrl}stats/`)
+      ) {
         // Explicitly set planet view based on URL
         setGameState("metrics");
         setShowPerformanceView(false);
@@ -294,7 +305,7 @@ const CosmicMultiplicationQuest = () => {
     // Clear any feedback and set game to active mode
     setMiniGameActive(false);
     setMiniGameFeedback("");
-    
+
     // Set the question start time for timing calculations
     setQuestionStartTime(Date.now());
 
@@ -372,7 +383,7 @@ const CosmicMultiplicationQuest = () => {
     setTimeRemaining(null); // No time limit in learning mode
     setFeedback(""); // Clear any existing feedback
     setTimerRunning(false); // No timer in learning mode
-    
+
     // Set the question start time for timing calculations
     setQuestionStartTime(Date.now());
   };
@@ -445,7 +456,7 @@ const CosmicMultiplicationQuest = () => {
     setTimeRemaining(null); // No time limit in learning mode
     setFeedback(""); // Clear any existing feedback
     setTimerRunning(false); // No timer in learning mode
-    
+
     // Set the question start time for timing calculations
     setQuestionStartTime(Date.now());
   };
@@ -479,7 +490,7 @@ const CosmicMultiplicationQuest = () => {
       // In learning mode, calculate actual time spent on the question
       if (questionStartTime) {
         // Calculate seconds elapsed since the question was shown
-        secondsUsed = (Date.now() - questionStartTime) / 1000;
+        secondsUsed = (Date.now() - (questionStartTime + 700)) / 1000;
         // Round to 1 decimal place for better display
         secondsUsed = Math.round(secondsUsed * 10) / 10;
       } else {
@@ -1037,37 +1048,49 @@ const CosmicMultiplicationQuest = () => {
 
   // Function to reset stats for a specific planet
   const resetPlanetStats = (planetId) => {
-    if (!window.confirm(`Reset stats for ${planets.find(p => p.id === planetId).name}? This cannot be undone.`)) {
+    if (
+      !window.confirm(
+        `Reset stats for ${
+          planets.find((p) => p.id === planetId).name
+        }? This cannot be undone.`
+      )
+    ) {
       return;
     }
 
     // Get the planet's table number
-    const planetTable = planets.find(p => p.id === planetId).table;
-    
+    const planetTable = planets.find((p) => p.id === planetId).table;
+
     // Reset normal mode stats
-    setCorrectAnswers(prevCorrect => {
+    setCorrectAnswers((prevCorrect) => {
       const newCorrect = { ...prevCorrect };
       // Remove all entries for this table (e.g., "2x1", "2x2", etc.)
-      Object.keys(newCorrect).forEach(key => {
-        if (key.startsWith(`${planetTable}x`) || key.startsWith(`${planetTable}×`)) {
+      Object.keys(newCorrect).forEach((key) => {
+        if (
+          key.startsWith(`${planetTable}x`) ||
+          key.startsWith(`${planetTable}×`)
+        ) {
           delete newCorrect[key];
         }
       });
       return newCorrect;
     });
 
-    setWrongAnswers(prevWrong => {
+    setWrongAnswers((prevWrong) => {
       const newWrong = { ...prevWrong };
       // Remove all entries for this table
-      Object.keys(newWrong).forEach(key => {
-        if (key.startsWith(`${planetTable}x`) || key.startsWith(`${planetTable}×`)) {
+      Object.keys(newWrong).forEach((key) => {
+        if (
+          key.startsWith(`${planetTable}x`) ||
+          key.startsWith(`${planetTable}×`)
+        ) {
           delete newWrong[key];
         }
       });
       return newWrong;
     });
 
-    setResponseTimes(prevTimes => {
+    setResponseTimes((prevTimes) => {
       const newTimes = { ...prevTimes };
       // Remove all entries for this table
       if (newTimes[`table_${planetTable}`]) {
@@ -1076,11 +1099,14 @@ const CosmicMultiplicationQuest = () => {
       return newTimes;
     });
 
-    setAttemptCounts(prevCounts => {
+    setAttemptCounts((prevCounts) => {
       const newCounts = { ...prevCounts };
       // Remove all entries for this table
-      Object.keys(newCounts).forEach(key => {
-        if (key.startsWith(`${planetTable}x`) || key.startsWith(`${planetTable}×`)) {
+      Object.keys(newCounts).forEach((key) => {
+        if (
+          key.startsWith(`${planetTable}x`) ||
+          key.startsWith(`${planetTable}×`)
+        ) {
           delete newCounts[key];
         }
       });
@@ -1088,7 +1114,7 @@ const CosmicMultiplicationQuest = () => {
     });
 
     // Reset learning mode stats
-    setLearningModeResponseTimes(prevTimes => {
+    setLearningModeResponseTimes((prevTimes) => {
       const newTimes = { ...prevTimes };
       // Remove planet entries from learning mode response times
       if (newTimes[`planet_${planetId}`]) {
@@ -1098,7 +1124,7 @@ const CosmicMultiplicationQuest = () => {
     });
 
     // Reset planet mastery for this planet
-    setPlanetMastery(prevMastery => {
+    setPlanetMastery((prevMastery) => {
       const newMastery = { ...prevMastery };
       if (newMastery[planetId]) {
         delete newMastery[planetId];
@@ -1107,7 +1133,7 @@ const CosmicMultiplicationQuest = () => {
     });
 
     // Reset fast answers for this planet
-    setFastAnswers(prevFastAnswers => {
+    setFastAnswers((prevFastAnswers) => {
       const newFastAnswers = { ...prevFastAnswers };
       if (newFastAnswers[planetId]) {
         delete newFastAnswers[planetId];
@@ -1116,18 +1142,30 @@ const CosmicMultiplicationQuest = () => {
     });
 
     // Clear learning mode level completion data for this planet
-    const learningModeLevelCompletion = loadFromLocalStorage(LEARNING_MODE_STORAGE_KEYS.LEVEL_COMPLETION, {});
+    const learningModeLevelCompletion = loadFromLocalStorage(
+      LEARNING_MODE_STORAGE_KEYS.LEVEL_COMPLETION,
+      {}
+    );
     const planetKey = `planet_${planetId}`;
     if (learningModeLevelCompletion[planetKey]) {
       delete learningModeLevelCompletion[planetKey];
-      saveToLocalStorage(LEARNING_MODE_STORAGE_KEYS.LEVEL_COMPLETION, learningModeLevelCompletion);
+      saveToLocalStorage(
+        LEARNING_MODE_STORAGE_KEYS.LEVEL_COMPLETION,
+        learningModeLevelCompletion
+      );
     }
 
     // Clear learning mode progress for this planet
-    const learningModeProgress = loadFromLocalStorage(LEARNING_MODE_STORAGE_KEYS.PROGRESS, {});
+    const learningModeProgress = loadFromLocalStorage(
+      LEARNING_MODE_STORAGE_KEYS.PROGRESS,
+      {}
+    );
     if (learningModeProgress[planetId]) {
       delete learningModeProgress[planetId];
-      saveToLocalStorage(LEARNING_MODE_STORAGE_KEYS.PROGRESS, learningModeProgress);
+      saveToLocalStorage(
+        LEARNING_MODE_STORAGE_KEYS.PROGRESS,
+        learningModeProgress
+      );
     }
   };
 
