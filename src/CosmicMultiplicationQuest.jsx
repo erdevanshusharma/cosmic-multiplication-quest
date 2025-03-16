@@ -95,6 +95,7 @@ const CosmicMultiplicationQuest = () => {
   const [completedLevel, setCompletedLevel] = useState(null);
   const [nextLevel, setNextLevel] = useState(null);
   const [levelCompletionRank, setLevelCompletionRank] = useState(null);
+  const [questionStartTime, setQuestionStartTime] = useState(null); // Track when the question was shown
 
   // Save states to localStorage when they change and update URL
   useEffect(() => {
@@ -293,6 +294,9 @@ const CosmicMultiplicationQuest = () => {
     // Clear any feedback and set game to active mode
     setMiniGameActive(false);
     setMiniGameFeedback("");
+    
+    // Set the question start time for timing calculations
+    setQuestionStartTime(Date.now());
 
     const planet = planets.find((p) => p.id === currentPlanet);
 
@@ -368,6 +372,9 @@ const CosmicMultiplicationQuest = () => {
     setTimeRemaining(null); // No time limit in learning mode
     setFeedback(""); // Clear any existing feedback
     setTimerRunning(false); // No timer in learning mode
+    
+    // Set the question start time for timing calculations
+    setQuestionStartTime(Date.now());
   };
 
   // Exit learning mode and return to normal game mode
@@ -438,6 +445,9 @@ const CosmicMultiplicationQuest = () => {
     setTimeRemaining(null); // No time limit in learning mode
     setFeedback(""); // Clear any existing feedback
     setTimerRunning(false); // No timer in learning mode
+    
+    // Set the question start time for timing calculations
+    setQuestionStartTime(Date.now());
   };
 
   // Start the game
@@ -466,9 +476,16 @@ const CosmicMultiplicationQuest = () => {
     // Calculate response time differently based on mode
     let secondsUsed;
     if (isLearningMode) {
-      // In learning mode, track time since question was displayed
-      // For simplicity, we'll use a placeholder value since there's no timer
-      secondsUsed = 3; // Default value for tracking purpose
+      // In learning mode, calculate actual time spent on the question
+      if (questionStartTime) {
+        // Calculate seconds elapsed since the question was shown
+        secondsUsed = (Date.now() - questionStartTime) / 1000;
+        // Round to 1 decimal place for better display
+        secondsUsed = Math.round(secondsUsed * 10) / 10;
+      } else {
+        // Fallback if start time wasn't recorded for some reason
+        secondsUsed = 3;
+      }
     } else {
       // Regular mode - calculate from timer
       const fullTimeLimit = getDifficultyTimeLimit(isLearningMode);
