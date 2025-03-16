@@ -503,6 +503,9 @@ const CosmicMultiplicationQuest = () => {
       secondsUsed = fullTimeLimit - timeRemaining;
     }
 
+    // Ensuring secondsUsed isn't counted more than 15 seconds in case someone got busy with something
+    secondsUsed = Math.min(secondsUsed, 15);
+
     // Update attempt counts for this question
     setAttemptCounts((prev) => ({
       ...prev,
