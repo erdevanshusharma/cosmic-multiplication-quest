@@ -65,7 +65,6 @@ const GameScreen = ({
         currentPlanet={currentPlanet}
         planets={planets}
         score={score}
-        lives={lives}
         speedBoost={speedBoost}
         responseTimes={responseTimes}
       />

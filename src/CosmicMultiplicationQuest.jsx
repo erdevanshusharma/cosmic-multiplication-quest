@@ -81,7 +81,9 @@ const CosmicMultiplicationQuest = () => {
   const [attemptCounts, setAttemptCounts] = useState(
     loadFromLocalStorage("cosmicQuest_attemptCounts", {})
   ); // Track number of attempts for each question
-  const [showPerformanceView, setShowPerformanceView] = useState(false); // Toggle for performance view
+  const [showPerformanceView, setShowPerformanceView] = useState(
+    loadFromLocalStorage("cosmicQuest_showPerformanceView", false)
+  ); // Toggle for performance view
 
   // Learning mode state
   const [isLearningMode, setIsLearningMode] = useState(false);
@@ -109,15 +111,20 @@ const CosmicMultiplicationQuest = () => {
     } else if (gameState === "game") {
       newPath = `${baseUrl}play/${currentPlanet}`;
     } else if (gameState === "metrics") {
-      newPath = `${baseUrl}stats`;
+      // Different URLs for planet view and performance view
+      if (showPerformanceView) {
+        newPath = `${baseUrl}stats/performance`;
+      } else {
+        newPath = `${baseUrl}stats/planets`;
+      }
     }
 
     // Use the final path directly - no combination needed
     const newUrl = newPath;
 
     // Update URL without full page reload
-    window.history.pushState({ gameState, currentPlanet }, "", newUrl);
-  }, [gameState, currentPlanet]);
+    window.history.pushState({ gameState, currentPlanet, showPerformanceView }, "", newUrl);
+  }, [gameState, currentPlanet, showPerformanceView]);
 
   useEffect(() => {
     saveToLocalStorage("cosmicQuest_currentPlanet", currentPlanet);
@@ -171,6 +178,10 @@ const CosmicMultiplicationQuest = () => {
     saveToLocalStorage("cosmicQuest_attemptCounts", attemptCounts);
   }, [attemptCounts]);
 
+  useEffect(() => {
+    saveToLocalStorage("cosmicQuest_showPerformanceView", showPerformanceView);
+  }, [showPerformanceView]);
+
   // Save learning mode response times when they change
   useEffect(() => {
     saveToLocalStorage(
@@ -219,6 +230,11 @@ const CosmicMultiplicationQuest = () => {
         if (event.state.currentPlanet) {
           setCurrentPlanet(event.state.currentPlanet);
         }
+        if (typeof event.state.showPerformanceView !== 'undefined') {
+          setShowPerformanceView(event.state.showPerformanceView);
+          // Also update localStorage to keep it in sync
+          saveToLocalStorage("cosmicQuest_showPerformanceView", event.state.showPerformanceView);
+        }
       } else {
         // Default to menu if no state is available
         setGameState("menu");
@@ -242,8 +258,19 @@ const CosmicMultiplicationQuest = () => {
           setCurrentPlanet(planetId);
           setGameState("game");
         }
-      } else if (path.includes(`${baseUrl}stats`)) {
+      } else if (path.includes(`${baseUrl}stats/performance`)) {
+        // Explicitly set performance view based on URL - this takes precedence over localStorage
+        // This is critical to ensure refresh works properly
         setGameState("metrics");
+        setShowPerformanceView(true);
+        // Also update localStorage
+        saveToLocalStorage("cosmicQuest_showPerformanceView", true);
+      } else if (path.includes(`${baseUrl}stats/planets`) || path === `${baseUrl}stats` || path.endsWith(`${baseUrl}stats/`)) {
+        // Explicitly set planet view based on URL
+        setGameState("metrics");
+        setShowPerformanceView(false);
+        // Also update localStorage
+        saveToLocalStorage("cosmicQuest_showPerformanceView", false);
       } else {
         setGameState("menu");
       }
@@ -754,7 +781,7 @@ const CosmicMultiplicationQuest = () => {
         setBadges((prev) => [...prev, "New Spaceship Part!"]);
       }
     } else {
-      setLives((prev) => prev - 1);
+      // Not decreasing lives anymore
       setFeedback(`Incorrect. The answer is ${currentQuestion.answer}.`);
       setSpeedBoost(1); // Reset speed boost
 
@@ -778,13 +805,6 @@ const CosmicMultiplicationQuest = () => {
           [currentPlanet]: newMasteryPercent,
         };
       });
-
-      // Check if game over
-      if (lives <= 1) {
-        setTimerRunning(false);
-        setGameState("metrics");
-        return;
-      }
 
       // Continue with next question after delay
       setTimeout(() => {
@@ -986,15 +1006,8 @@ const CosmicMultiplicationQuest = () => {
     } else if (timerRunning && timeRemaining === 0) {
       // Time's up
       setTimerRunning(false);
-      setLives((prev) => prev - 1);
       setFeedback(`Time's up! The answer was ${currentQuestion.answer}.`);
       setSpeedBoost(1); // Reset speed boost
-
-      // Check if game over
-      if (lives <= 1) {
-        setGameState("metrics");
-        return;
-      }
 
       // Continue with next question after delay
       setTimeout(() => {

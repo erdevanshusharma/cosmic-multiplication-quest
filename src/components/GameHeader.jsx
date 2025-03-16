@@ -5,7 +5,6 @@ const GameHeader = ({
   currentPlanet,
   planets,
   score,
-  lives,
   speedBoost,
   responseTimes,
 }) => {
@@ -33,7 +32,6 @@ const GameHeader = ({
       </div>
       <div className="text-white">
         <p className="text-yellow-300 font-bold">Score: {score}</p>
-        <p>Lives: {Array(lives).fill("❤️").join("")}</p>
         {speedBoost > 1 && (
           <p className="text-xs text-green-300">
             Speed Boost: x{speedBoost.toFixed(2)}
