@@ -9,21 +9,23 @@ const LevelCompletionConfetti = ({
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   
+  // Debug level completion show status
   useEffect(() => {
     if (show) {
+      console.log("Level completion should show:", { level, nextLevel });
+    }
+  }, [show, level, nextLevel]);
+  
+  useEffect(() => {
+    if (show) {
+      // Make sure the modal is visible
       setIsVisible(true);
       
-      // Hide after 5 seconds and trigger the onComplete callback
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        if (onComplete) {
-          setTimeout(() => {
-            onComplete();
-          }, 500); // Give time for fade out animation
-        }
-      }, 5000);
+      // Keep showing the modal until user interacts with it
+      // This ensures they don't miss it
+      // We'll let the user dismiss it with the button instead of auto-hiding
       
-      return () => clearTimeout(timer);
+      return () => {}; // No auto-hide timeout
     }
   }, [show, onComplete]);
   
@@ -35,9 +37,9 @@ const LevelCompletionConfetti = ({
         isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
       }`}
     >
-      {/* Confetti animation using CSS */}
+      {/* Confetti animation using CSS - increased count for more celebration */}
       <div className="confetti-container">
-        {[...Array(50)].map((_, i) => (
+        {[...Array(100)].map((_, i) => (
           <div 
             key={i} 
             className="confetti"
@@ -53,9 +55,9 @@ const LevelCompletionConfetti = ({
         ))}
       </div>
       
-      {/* Celebration message card */}
-      <div className="bg-gray-800 rounded-xl p-8 max-w-md text-center transform scale-110 shadow-2xl border-2 border-emerald-400">
-        <h2 className="text-3xl font-bold text-white mb-4">Level Completed! 🎉</h2>
+      {/* Celebration message card with animation */}
+      <div className="bg-gray-800 rounded-xl p-8 max-w-md text-center transform scale-110 shadow-2xl border-2 border-emerald-400 animate-bounce-slow">
+        <h2 className="text-3xl font-bold text-white mb-4">🎉 Level Mastered! 🎉</h2>
         <div className="mb-6">
           <div className="text-xl text-gray-300 mb-2">
             You've mastered:
@@ -63,12 +65,7 @@ const LevelCompletionConfetti = ({
           <div className="text-2xl font-bold text-emerald-400 mb-4">
             {level.name}: {level.description}
           </div>
-          <div className="flex justify-center items-center mb-4">
-            <div className="text-lg text-gray-300 mr-3">Your rank:</div>
-            <div className={`px-4 py-2 rounded text-lg font-bold ${rank.color} bg-gray-700`}>
-              {rank.rank}
-            </div>
-          </div>
+          {/* Rank display removed from learning mode completion */}
         </div>
         
         {nextLevel ? (
@@ -88,9 +85,9 @@ const LevelCompletionConfetti = ({
             setIsVisible(false);
             if (onComplete) setTimeout(onComplete, 500);
           }}
-          className="mt-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-bold transition-colors"
+          className="mt-2 px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-bold transition-colors text-xl shadow-lg hover:scale-105 transform transition-transform"
         >
-          {nextLevel ? 'Continue to Next Level' : 'Continue to Main Test'}
+          {nextLevel ? '✨ Go to Next Level ✨' : '✨ Return to Main Test ✨'}
         </button>
       </div>
     </div>

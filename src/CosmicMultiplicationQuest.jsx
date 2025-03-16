@@ -41,8 +41,12 @@ const CosmicMultiplicationQuest = () => {
     loadFromLocalStorage("cosmicQuest_lives", 3)
   );
   const [feedback, setFeedback] = useState("");
-  const [currentQuestion, setCurrentQuestion] = useState({});
-  const [answerOptions, setAnswerOptions] = useState([]);
+  const [currentQuestion, setCurrentQuestion] = useState(
+    loadFromLocalStorage("cosmicQuest_currentQuestion", {})
+  );
+  const [answerOptions, setAnswerOptions] = useState(
+    loadFromLocalStorage("cosmicQuest_answerOptions", [])
+  );
   const [timerRunning, setTimerRunning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(10);
   const [unlockedPlanets, setUnlockedPlanets] = useState(
@@ -186,6 +190,14 @@ const CosmicMultiplicationQuest = () => {
   useEffect(() => {
     saveToLocalStorage("cosmicQuest_showPerformanceView", showPerformanceView);
   }, [showPerformanceView]);
+  
+  useEffect(() => {
+    saveToLocalStorage("cosmicQuest_currentQuestion", currentQuestion);
+  }, [currentQuestion]);
+  
+  useEffect(() => {
+    saveToLocalStorage("cosmicQuest_answerOptions", answerOptions);
+  }, [answerOptions]);
 
   // Save learning mode response times when they change
   useEffect(() => {
@@ -196,12 +208,22 @@ const CosmicMultiplicationQuest = () => {
   }, [learningModeResponseTimes]);
 
   // Update last played time whenever the game is started or resumed
+  // And ensure we have a valid question when the game starts
   useEffect(() => {
     if (gameState === "game") {
       const now = new Date().toISOString();
       setLastPlayed(now);
+      
+      // Check if we need to generate a new question on game state change
+      if (!currentQuestion.multiplicand || !currentQuestion.multiplier || 
+          !currentQuestion.answer || answerOptions.length === 0) {
+        const planet = planets.find(p => p.id === currentPlanet);
+        if (planet) {
+          generateNewQuestion();
+        }
+      }
     }
-  }, [gameState]);
+  }, [gameState, currentPlanet, currentQuestion, answerOptions, planets]);
 
   // Show welcome back message if returning after a while
   useEffect(() => {
@@ -265,6 +287,23 @@ const CosmicMultiplicationQuest = () => {
         if (unlockedPlanets.includes(planetId)) {
           setCurrentPlanet(planetId);
           setGameState("game");
+          
+          // Check if we need to generate a new question
+          const savedQuestion = loadFromLocalStorage("cosmicQuest_currentQuestion", {});
+          const savedOptions = loadFromLocalStorage("cosmicQuest_answerOptions", []);
+          
+          // If the question is empty or doesn't have required properties, generate a new one
+          if (!savedQuestion.multiplicand || !savedQuestion.multiplier || 
+              !savedQuestion.answer || savedOptions.length === 0) {
+            // We'll generate a new question in a subsequent useEffect
+            // This just flags that we need a new question
+            setTimeout(() => {
+              const planet = planets.find(p => p.id === planetId);
+              if (planet) {
+                generateNewQuestion();
+              }
+            }, 100);
+          }
         }
       } else if (path.includes(`${baseUrl}stats/performance`)) {
         // Explicitly set performance view based on URL - this takes precedence over localStorage
@@ -305,11 +344,18 @@ const CosmicMultiplicationQuest = () => {
     // Clear any feedback and set game to active mode
     setMiniGameActive(false);
     setMiniGameFeedback("");
+    setFeedback(""); // Ensure feedback is cleared
 
     // Set the question start time for timing calculations
     setQuestionStartTime(Date.now());
 
     const planet = planets.find((p) => p.id === currentPlanet);
+    
+    // Safety check - ensure we have a valid planet
+    if (!planet) {
+      console.error("Cannot generate question: invalid planet ID", currentPlanet);
+      return;
+    }
 
     // Check if we're in learning mode
     if (isLearningMode && currentLearningLevel) {
@@ -772,11 +818,42 @@ const CosmicMultiplicationQuest = () => {
           learningModeResponseTimes
         );
 
-        // If player achieved Hacker rank or higher, trigger level completion
+        // Modified condition to trigger level completion
+        // Now based on completion percentage and minimum times answered
+        // instead of requiring specific ranks to make it more accessible
+        const completionThreshold = 0.95; // 95% completion needed (more forgiving)
+        const minAnswersPerQuestion = 5; // Each question needs to be answered 5 times
+        
+        const totalQuestionsInRange = 
+          currentLearningLevel.range[1] - currentLearningLevel.range[0] + 1;
+        const questionKeys = Object.keys(
+          learningModeResponseTimes[`planet_${currentPlanet}`]?.[`level_${currentLearningLevel.id}`] || {}
+        );
+        
+        // Calculate total answers for this level
+        let totalAnswers = 0;
+        questionKeys.forEach(key => {
+          const times = learningModeResponseTimes[`planet_${currentPlanet}`]?.[`level_${currentLearningLevel.id}`]?.[key] || [];
+          totalAnswers += times.length;
+        });
+        
+        // Check completion percentage
+        const completionPercentage = 
+          totalQuestionsInRange > 0 ? 
+          questionKeys.length / totalQuestionsInRange : 0;
+        
+        // Check if minimum answers requirement is met
+        const hasMinAnswers = 
+          totalAnswers >= (totalQuestionsInRange * minAnswersPerQuestion * completionThreshold);
+        
+        // Check if this level hasn't been completed yet
+        const notCompletedYet = !isLearningModeLevelCompleted(currentPlanet, currentLearningLevel.id);
+        
+        // Determine if level should be marked as completed
         if (
-          levelData.playerRank &&
-          ["Hacker", "God"].includes(levelData.playerRank.rank) &&
-          !isLearningModeLevelCompleted(currentPlanet, currentLearningLevel.id)
+          completionPercentage >= completionThreshold && 
+          hasMinAnswers && 
+          notCompletedYet
         ) {
           // Save completion status
           saveLearningModeLevelCompletion(
@@ -1003,6 +1080,8 @@ const CosmicMultiplicationQuest = () => {
         "cosmicQuest_lastPlayed",
         "cosmicQuest_responseTimes",
         "cosmicQuest_attemptCounts",
+        "cosmicQuest_currentQuestion",
+        "cosmicQuest_answerOptions",
         // Learning mode keys
         LEARNING_MODE_STORAGE_KEYS.PROGRESS,
         LEARNING_MODE_STORAGE_KEYS.LEVEL_COMPLETION,
@@ -1169,6 +1248,20 @@ const CosmicMultiplicationQuest = () => {
         LEARNING_MODE_STORAGE_KEYS.PROGRESS,
         learningModeProgress
       );
+    }
+    
+    // If the current question is for this planet, reset it
+    if (currentPlanet === planetId && gameState === "game") {
+      // Clear current question and generate a new one
+      setCurrentQuestion({});
+      setAnswerOptions([]);
+      saveToLocalStorage("cosmicQuest_currentQuestion", {});
+      saveToLocalStorage("cosmicQuest_answerOptions", []);
+      
+      // Generate a new question after a brief delay
+      setTimeout(() => {
+        generateNewQuestion();
+      }, 100);
     }
   };
 

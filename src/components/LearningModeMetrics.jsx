@@ -50,13 +50,14 @@ const LearningModeMetrics = ({
 
   // We already calculated completion percentage above based on range coverage
 
-  // Check if player has achieved Hacker rank or better
+  // Simplified criteria for showing the "level mastered" button
+  // Now matches the criteria in CosmicMultiplicationQuest.jsx
+  const completionThreshold = 0.95; // 95% completion
+  const minAnswersPerQuestion = 5; // Each question needs 5 answers on average
+  
   const hasAchievedHackerRank =
-    totalQuestions === totalQuestionsInRange &&
-    totalAnswers >= totalQuestionsInRange * 5 &&
-    completionPercentage === 100 &&
-    playerRank &&
-    ["Hacker", "God"].includes(playerRank.rank);
+    (totalQuestions / totalQuestionsInRange) >= completionThreshold &&
+    totalAnswers >= (totalQuestionsInRange * minAnswersPerQuestion * completionThreshold);
   return (
     <div className="bg-gray-800 rounded-lg p-4 mt-4 shadow-lg">
       <div className="flex justify-between items-center mb-3">
@@ -82,11 +83,7 @@ const LearningModeMetrics = ({
           <span className="text-gray-400">Avg. Time:</span>
           <span className="text-white ml-2">{formattedAvgTime}</span>
         </div>
-        {playerRank && (
-          <div className={`px-3 py-1 rounded ${playerRank.color} bg-gray-700`}>
-            {playerRank.rank}
-          </div>
-        )}
+        {/* Rank display removed to reduce pressure in learning mode */}
       </div>
 
       {/* Progress bar */}
@@ -100,9 +97,9 @@ const LearningModeMetrics = ({
       {hasAchievedHackerRank && (
         <button
           onClick={onChangeLevel}
-          className="mt-3 text-center p-2 px-4 bg-emerald-800 rounded-full text-white"
+          className="mt-3 text-center p-2 px-4 bg-emerald-800 hover:bg-emerald-700 rounded-full text-white font-bold transform transition-all hover:scale-105"
         >
-          ✓ Level Mastered! Go to the next level!
+          ✨ Level Mastered! Go to the next level! ✨
         </button>
       )}
     </div>
